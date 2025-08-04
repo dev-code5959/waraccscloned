@@ -2,6 +2,33 @@
 
 return [
 
+    'currency' => env('DEFAULT_CURRENCY', 'USD'),
+    'min_deposit_amount' => env('MIN_DEPOSIT_AMOUNT', 10.00),
+    'max_deposit_amount' => env('MAX_DEPOSIT_AMOUNT', 10000.00),
+    'referral_commission_rate' => env('REFERRAL_COMMISSION_RATE', 5.0),
+
+    // Feature flags
+    'enable_referral_system' => env('ENABLE_REFERRAL_SYSTEM', true),
+    'enable_two_factor' => env('ENABLE_TWO_FACTOR', true),
+    'enable_kyc_verification' => env('ENABLE_KYC_VERIFICATION', false),
+    'enable_crypto_payments' => env('ENABLE_CRYPTO_PAYMENTS', true),
+    'enable_promo_codes' => env('ENABLE_PROMO_CODES', true),
+
+    // Rate limiting
+    'rate_limit_login' => env('RATE_LIMIT_LOGIN', 5),
+    'rate_limit_api' => env('RATE_LIMIT_API', 100),
+    'rate_limit_purchase' => env('RATE_LIMIT_PURCHASE', 10),
+
+    // File upload settings
+    'max_upload_size' => env('MAX_UPLOAD_SIZE', 10240), // KB
+    'allowed_image_types' => explode(',', env('ALLOWED_IMAGE_TYPES', 'jpeg,png,jpg,gif,webp')),
+    'allowed_document_types' => explode(',', env('ALLOWED_DOCUMENT_TYPES', 'pdf,txt,doc,docx')),
+
+    // Admin settings
+    'admin_email' => env('ADMIN_EMAIL', 'admin@accszone.com'),
+    'support_email' => env('SUPPORT_EMAIL', 'support@accszone.com'),
+    'default_timezone' => env('DEFAULT_TIMEZONE', 'UTC'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Name

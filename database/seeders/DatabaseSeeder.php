@@ -1,23 +1,25 @@
 <?php
+// File: database/seeders/DatabaseSeeder.php
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $this->call([
+            RoleAndPermissionSeeder::class,
+            UserSeeder::class,
+            CategorySeeder::class,
+            // ProductSeeder::class,
+            // AccessCodeSeeder::class,
+            // PromoCodeSeeder::class,
+            // CmsPageSeeder::class,
+            SampleDataSeeder::class,
         ]);
     }
 }
