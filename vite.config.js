@@ -6,9 +6,6 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-    content: [
-        './resources/js/**/*.jsx',
-    ],
     plugins: [
         laravel({
             input: 'resources/js/app.jsx',
