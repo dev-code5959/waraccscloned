@@ -205,7 +205,8 @@ export default function Homepage({
                             >
                                 <div className="flex items-center mb-4">
                                     {category.icon && (
-                                        <img src={category.icon} alt="" className="h-8 w-8 mr-3" />
+                                        // <img src={category.icon} alt="" className="h-8 w-8 mr-3" />
+                                        category.icon
                                     )}
                                     <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
                                         {category.name}

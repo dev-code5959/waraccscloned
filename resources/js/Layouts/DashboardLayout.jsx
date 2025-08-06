@@ -33,7 +33,7 @@ export default function DashboardLayout({ children }) {
     ];
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 flex">
             {/* Mobile sidebar backdrop */}
             {isSidebarOpen && (
                 <div
@@ -126,7 +126,7 @@ export default function DashboardLayout({ children }) {
             </div>
 
             {/* Main content */}
-            <div className="lg:pl-64">
+            <div className="w-full">
                 {/* Top bar */}
                 <div className="bg-white shadow-sm border-b border-gray-200">
                     <div className="flex items-center justify-between h-16 px-6">

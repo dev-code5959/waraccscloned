@@ -40,8 +40,8 @@ export default function ProductDetail({ product, relatedProducts, meta, auth }) 
             return;
         }
 
-        post(route('orders.create', product.slug), {
-            data: { quantity }
+        post(route('orders.store'), {
+            data: { quantity, product_id: product.id }
         });
     };
 

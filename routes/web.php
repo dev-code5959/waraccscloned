@@ -54,6 +54,7 @@ require __DIR__ . '/auth.php';
 // Order Routes (requires auth)
 Route::middleware('auth')->group(function () {
     Route::get('/checkout/{product:slug}', [OrderController::class, 'create'])->name('orders.create');
+    Route::post('/checkout', [OrderController::class, 'store'])->name('checkout.store');
     Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
     Route::get('/orders/{order}/payment', [OrderController::class, 'payment'])->name('orders.payment');
     Route::post('/orders/{order}/pay-with-balance', [OrderController::class, 'payWithBalance'])->name('orders.pay-balance');

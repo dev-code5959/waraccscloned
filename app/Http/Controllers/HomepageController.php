@@ -89,7 +89,7 @@ class HomepageController extends Controller
         ];
 
 
-        return Inertia::render('Pages\Homepage', [
+            return Inertia::render('Homepage', [
             'featuredProducts' => $featuredProducts,
             'categories' => $categories,
             'popularProducts' => $popularProducts,
