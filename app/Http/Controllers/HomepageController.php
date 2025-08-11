@@ -88,8 +88,7 @@ class HomepageController extends Controller
             'happy_customers' => \App\Models\User::role('customer')->count(),
         ];
 
-
-            return Inertia::render('Homepage', [
+        return Inertia::render('Homepage', [
             'featuredProducts' => $featuredProducts,
             'categories' => $categories,
             'popularProducts' => $popularProducts,
@@ -102,44 +101,84 @@ class HomepageController extends Controller
         ]);
     }
 
+    /**
+     * Handle search functionality
+     */
     public function search(Request $request)
     {
         $query = $request->get('q', '');
-        $categoryId = $request->get('category');
-        $minPrice = $request->get('min_price');
-        $maxPrice = $request->get('max_price');
-        $sortBy = $request->get('sort', 'name');
-        $perPage = min($request->get('per_page', 12), 50);
+        $categorySlug = $request->get('category', '');
+        $sortBy = $request->get('sort', 'relevance');
+        $priceMin = $request->get('price_min', 0);
+        $priceMax = $request->get('price_max', 1000);
+        $perPage = $request->get('per_page', 12);
 
-        $products = Product::with(['category', 'media'])
-            ->active()
-            ->when($query, function ($q) use ($query) {
-                $q->search($query);
-            })
-            ->when($categoryId, function ($q) use ($categoryId) {
-                $q->byCategory($categoryId);
-            })
-            ->when($minPrice || $maxPrice, function ($q) use ($minPrice, $maxPrice) {
-                $q->priceRange($minPrice, $maxPrice);
-            })
-            ->when($sortBy === 'price_low', function ($q) {
-                $q->orderBy('price', 'asc');
-            })
-            ->when($sortBy === 'price_high', function ($q) {
-                $q->orderBy('price', 'desc');
-            })
-            ->when($sortBy === 'popular', function ($q) {
-                $q->popular();
-            })
-            ->when($sortBy === 'newest', function ($q) {
-                $q->orderBy('created_at', 'desc');
-            })
-            ->when($sortBy === 'name', function ($q) {
-                $q->orderBy('name', 'asc');
-            })
-            ->paginate($perPage)
-            ->withQueryString();
+        // Build the search query
+        $productsQuery = Product::with(['category'])
+            ->where('is_active', true);
 
+        // Apply search filters
+        if (!empty($query)) {
+            $productsQuery->where(function ($q) use ($query) {
+                $q->where('name', 'like', '%' . $query . '%')
+                  ->orWhere('description', 'like', '%' . $query . '%')
+                  ->orWhere('features', 'like', '%' . $query . '%')
+                  ->orWhereHas('category', function ($categoryQuery) use ($query) {
+                      $categoryQuery->where('name', 'like', '%' . $query . '%');
+                  });
+            });
+        }
+
+        // Apply category filter
+        if (!empty($categorySlug)) {
+            $productsQuery->whereHas('category', function ($q) use ($categorySlug) {
+                $q->where('slug', $categorySlug);
+            });
+        }
+
+        // Apply price range filter
+        if ($priceMin > 0 || $priceMax < 1000) {
+            $productsQuery->whereBetween('price', [$priceMin, $priceMax]);
+        }
+
+        // Apply sorting
+        switch ($sortBy) {
+            case 'name':
+                $productsQuery->orderBy('name', 'asc');
+                break;
+            case 'price_asc':
+                $productsQuery->orderBy('price', 'asc');
+                break;
+            case 'price_desc':
+                $productsQuery->orderBy('price', 'desc');
+                break;
+            case 'created_at':
+                $productsQuery->orderBy('created_at', 'desc');
+                break;
+            case 'popularity':
+                // This would need a popularity score or order count
+                $productsQuery->orderBy('created_at', 'desc');
+                break;
+            default: // relevance
+                if (!empty($query)) {
+                    // Basic relevance: exact matches first, then partial matches
+                    $productsQuery->orderByRaw("
+                        CASE
+                            WHEN name LIKE ? THEN 1
+                            WHEN description LIKE ? THEN 2
+                            ELSE 3
+                        END, name ASC
+                    ", ['%' . $query . '%', '%' . $query . '%']);
+                } else {
+                    $productsQuery->orderBy('created_at', 'desc');
+                }
+                break;
+        }
+
+        // Get paginated results
+        $products = $productsQuery->paginate($perPage);
+
+        // Transform products data
         $products->getCollection()->transform(function ($product) {
             return [
                 'id' => $product->id,
@@ -147,37 +186,129 @@ class HomepageController extends Controller
                 'slug' => $product->slug,
                 'description' => $product->description,
                 'price' => $product->price,
-                'formatted_price' => $product->formatted_price,
-                'category' => [
+                'formatted_price' => '$' . number_format($product->price, 2),
+                'is_in_stock' => $product->is_in_stock,
+                'available_stock' => $product->available_access_codes_count ?? $product->stock_quantity,
+                'features' => $product->features,
+                'category' => $product->category ? [
                     'id' => $product->category->id,
                     'name' => $product->category->name,
                     'slug' => $product->category->slug,
-                ],
-                'thumbnail' => $product->thumbnail,
-                'stock_quantity' => $product->stock_quantity,
-                'sold_count' => $product->sold_count,
-                'is_in_stock' => $product->is_in_stock,
+                ] : null,
             ];
         });
 
-        $categories = Category::active()
-            ->ordered()
-            ->get(['id', 'name', 'slug']);
+        // Get all categories for filter dropdown
+        $categories = Category::where('is_active', true)
+            ->withCount(['products' => function ($query) {
+                $query->where('is_active', true);
+            }])
+            ->orderBy('name')
+            ->get()
+            ->map(function ($category) {
+                return [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                    'products_count' => $category->products_count,
+                ];
+            });
 
-        return Inertia::render('SearchResults', [
-            'products' => $products,
+        // Generate search suggestions
+        $suggestions = [];
+        if (!empty($query) && $products->total() === 0) {
+            $suggestions = $this->generateSearchSuggestions($query);
+        }
+
+        // Popular searches (hardcoded for now, could be from database)
+        $popularSearches = [
+            'Gmail PVA',
+            'Gmail SMTP',
+            'Facebook accounts',
+            'Instagram accounts',
+            'LinkedIn accounts',
+            'Twitter accounts',
+            'YouTube accounts',
+            'Discord accounts',
+        ];
+
+        return Inertia::render('SearchPage', [
+            'query' => $query,
+            'results' => [
+                'data' => $products->items(),
+                'total' => $products->total(),
+                'per_page' => $products->perPage(),
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+                'from' => $products->firstItem(),
+                'to' => $products->lastItem(),
+            ],
+            'pagination' => [
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+                'per_page' => $products->perPage(),
+                'total' => $products->total(),
+                'prev_page_url' => $products->previousPageUrl(),
+                'next_page_url' => $products->nextPageUrl(),
+                'path' => $products->path(),
+            ],
             'categories' => $categories,
             'filters' => [
-                'query' => $query,
-                'category_id' => $categoryId,
-                'min_price' => $minPrice,
-                'max_price' => $maxPrice,
-                'sort_by' => $sortBy,
+                'category' => $categorySlug,
+                'sort' => $sortBy,
+                'price_min' => $priceMin,
+                'price_max' => $priceMax,
             ],
+            'suggestions' => $suggestions,
+            'popularSearches' => $popularSearches,
             'meta' => [
-                'title' => $query ? "Search results for '{$query}'" : 'Search Products',
-                'description' => "Find the perfect digital products for your needs.",
+                'title' => !empty($query)
+                    ? "Search results for '{$query}' - " . config('app.name')
+                    : 'Search Products - ' . config('app.name'),
+                'description' => !empty($query)
+                    ? "Find {$query} and more digital accounts. Instant delivery, secure payments."
+                    : 'Search our catalog of premium digital accounts and services.',
             ],
         ]);
+    }
+
+    /**
+     * Generate search suggestions when no results found
+     */
+    private function generateSearchSuggestions($query)
+    {
+        $suggestions = [];
+
+        // Get similar product names
+        $similarProducts = Product::where('is_active', true)
+            ->where(function ($q) use ($query) {
+                $words = explode(' ', $query);
+                foreach ($words as $word) {
+                    if (strlen($word) > 2) {
+                        $q->orWhere('name', 'like', '%' . $word . '%')
+                          ->orWhere('description', 'like', '%' . $word . '%');
+                    }
+                }
+            })
+            ->limit(3)
+            ->pluck('name')
+            ->toArray();
+
+        // Add category names
+        $similarCategories = Category::where('is_active', true)
+            ->where('name', 'like', '%' . $query . '%')
+            ->limit(2)
+            ->pluck('name')
+            ->toArray();
+
+        // Combine suggestions
+        $suggestions = array_merge($similarProducts, $similarCategories);
+
+        // Add some default suggestions if no similar items found
+        if (empty($suggestions)) {
+            $suggestions = ['Gmail accounts', 'PVA accounts', 'SMTP accounts'];
+        }
+
+        return array_unique($suggestions);
     }
 }

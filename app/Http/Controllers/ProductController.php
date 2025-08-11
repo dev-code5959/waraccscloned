@@ -10,6 +10,49 @@ use Inertia\Inertia;
 
 class ProductController extends Controller
 {
+    public function categories()
+    {
+        $categories = Category::with('children')
+            ->rootCategories()
+            ->active()
+            ->ordered()
+            ->get()
+            ->map(function ($category) {
+                return [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                    'description' => $category->description,
+                    'icon' => $category->icon,
+                    'products_count' => $category->getTotalProductsCount(),
+                    'children' => $category->children->map(function ($child) {
+                        return [
+                            'id' => $child->id,
+                            'name' => $child->name,
+                            'slug' => $child->slug,
+                            'products_count' => $child->getTotalProductsCount(),
+                        ];
+                    }),
+                ];
+            });
+
+        $stats = [
+            'total_categories' => Category::active()->count(),
+            'total_products' => Product::active()->count(),
+            'in_stock_products' => Product::active()->inStock()->count(),
+        ];
+
+        return Inertia::render('Categories', [
+            'categories' => $categories,
+            'stats' => $stats,
+            'meta' => [
+                'title' => 'All Categories - Digital Products Store',
+                'description' => 'Browse all product categories. Find verified accounts, licenses, and digital products.',
+            ],
+        ]);
+    }
+
+
     public function show(Product $product)
     {
         // Load relationships
@@ -134,9 +177,30 @@ class ProductController extends Controller
             'products_count' => $category->getTotalProductsCount(),
         ];
 
-        return Inertia::render('CategoryListing', [
+        return Inertia::render('CategoryPage', [
             'category' => $categoryData,
-            'products' => $products,
+            'products' => [
+                'data' => $products->items(),
+                'total' => $products->total(),
+            ],
+            'subcategories' => $categoryData['children'],
+            'pagination' => [
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+                'per_page' => $products->perPage(),
+                'total' => $products->total(),
+                'prev_page_url' => $products->previousPageUrl(),
+                'next_page_url' => $products->nextPageUrl(),
+                'path' => $products->path(),
+            ],
+            'filters' => [
+                'sort' => 'name',
+                'in_stock' => false,
+                'phone_verified' => false,
+                'smtp_enabled' => false,
+                'price_min' => 0,
+                'price_max' => 1000,
+            ],
             'meta' => [
                 'title' => $category->name . ' - Digital Products',
                 'description' => $category->description ?: "Browse {$category->name} digital products",
@@ -200,6 +264,18 @@ class ProductController extends Controller
             'subtotal' => $product->price * $quantity,
             'formatted_subtotal' => '$' . number_format($product->price * $quantity, 2),
             'message' => 'Quantity is valid',
+        ]);
+    }
+
+    public function checkStock(Request $request, Product $product)
+    {
+        $quantity = $request->input('quantity', 1);
+        $availableStock = $product->available_stock ?? $product->stock_quantity;
+
+        return response()->json([
+            'in_stock' => $product->is_in_stock && $availableStock >= $quantity,
+            'available_stock' => $availableStock,
+            'requested_quantity' => $quantity,
         ]);
     }
 }

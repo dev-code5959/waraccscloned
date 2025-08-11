@@ -35,18 +35,19 @@ use Inertia\Inertia;
 // Public Routes
 Route::get('/', [HomepageController::class, 'index'])->name('homepage');
 Route::get('/search', [HomepageController::class, 'search'])->name('search');
+Route::get('/categories', [ProductController::class, 'categories'])->name('categories.index');
 Route::get('/categories/{category:slug}', [ProductController::class, 'category'])->name('categories.show');
 Route::get('/products/{product:slug}', [ProductController::class, 'show'])->name('products.show');
 Route::get('/products/{product:slug}/availability', [ProductController::class, 'checkAvailability'])->name('products.availability');
 Route::post('/products/{product:slug}/validate-quantity', [ProductController::class, 'validateQuantity'])->name('products.validate-quantity');
 
 // CMS Pages
-// Route::get('/about', [CmsPageController::class, 'show'])->name('cms.about');
-// Route::get('/terms', [CmsPageController::class, 'show'])->name('cms.terms');
-// Route::get('/privacy', [CmsPageController::class, 'show'])->name('cms.privacy');
-// Route::get('/help', [CmsPageController::class, 'show'])->name('cms.help');
-// Route::get('/contact', [CmsPageController::class, 'show'])->name('cms.contact');
-// Route::get('/page/{slug}', [CmsPageController::class, 'show'])->name('cms.page');
+Route::get('/about', [CmsPageController::class, 'show'])->name('cms.about');
+Route::get('/terms', [CmsPageController::class, 'show'])->name('cms.terms');
+Route::get('/privacy', [CmsPageController::class, 'show'])->name('cms.privacy');
+Route::get('/help', [CmsPageController::class, 'show'])->name('cms.help');
+Route::get('/contact', [CmsPageController::class, 'show'])->name('cms.contact');
+Route::get('/page/{slug}', [CmsPageController::class, 'show'])->name('cms.page');
 
 // Authentication Routes (handled by Breeze)
 require __DIR__ . '/auth.php';
