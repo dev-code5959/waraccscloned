@@ -21,7 +21,7 @@ class SupportTicket extends Model
         'priority',
         'status',
         'assigned_to',
-        'resolved_at',
+        'resolved_at'
     ];
 
     protected $casts = [

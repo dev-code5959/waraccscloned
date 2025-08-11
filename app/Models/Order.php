@@ -27,7 +27,9 @@ class Order extends Model
         'payment_reference',
         'access_codes_delivered',
         'completed_at',
+        'paid_at', // ADD THIS LINE
         'notes',
+        'net_amount'
     ];
 
     protected $casts = [
@@ -37,6 +39,7 @@ class Order extends Model
         'discount_amount' => 'decimal:2',
         'access_codes_delivered' => 'json',
         'completed_at' => 'datetime',
+        'paid_at' => 'datetime', // ADD THIS LINE
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -44,6 +47,15 @@ class Order extends Model
         return LogOptions::defaults()
             ->logOnly(['status', 'payment_status', 'total_amount'])
             ->logOnlyDirty();
+    }
+
+    public function getPaidAtAttribute($value)
+    {
+        // If there's no explicit paid_at timestamp, fall back to when payment_status became 'paid'
+        if (!$value && $this->payment_status === 'paid') {
+            return $this->updated_at;
+        }
+        return $value ? \Carbon\Carbon::parse($value) : null;
     }
 
     // Relationships
@@ -213,6 +225,7 @@ class Order extends Model
             'payment_status' => 'paid',
             'payment_method' => $paymentMethod,
             'payment_reference' => $paymentReference,
+            'paid_at' => now(), // ADD THIS LINE
         ]);
 
         // Auto-process if pending

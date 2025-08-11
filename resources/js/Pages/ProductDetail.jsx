@@ -15,11 +15,11 @@ import {
     TrendingUp
 } from 'lucide-react';
 
-export default function ProductDetail({ product, relatedProducts, meta, auth }) {
+export default function ProductDetail({ product, relatedProducts, meta, auth, errors, flash }) {
     const [quantity, setQuantity] = useState(product.min_purchase || 1);
     const [selectedImage, setSelectedImage] = useState(0);
 
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing } = useForm({
         product_id: product.id,
         quantity: quantity,
     });
@@ -34,14 +34,23 @@ export default function ProductDetail({ product, relatedProducts, meta, auth }) 
         }
     };
 
-    const handlePurchase = () => {
+    const handlePurchase = (e) => {
+        e.preventDefault();
+
         if (!auth.user) {
             window.location.href = '/login';
             return;
         }
 
+        // Update the form data with current quantity before submitting
+        setData('quantity', quantity);
+
         post(route('orders.store'), {
-            data: { quantity, product_id: product.id }
+            preserveState: true,
+            preserveScroll: true,
+            onError: (errors) => {
+                console.error('Order creation failed:', errors);
+            }
         });
     };
 
@@ -51,12 +60,38 @@ export default function ProductDetail({ product, relatedProducts, meta, auth }) 
         <AppLayout>
             <Head title={meta.title} />
 
+            {/* Flash Messages */}
+            {flash?.success && (
+                <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                    {flash.success}
+                </div>
+            )}
+
+            {flash?.error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    {flash.error}
+                </div>
+            )}
+
+            {/* Error Messages */}
+            {errors?.quantity && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    {errors.quantity}
+                </div>
+            )}
+
+            {errors?.order && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                    {errors.order}
+                </div>
+            )}
+
             {/* Breadcrumb */}
             <nav className="bg-gray-50 px-4 py-3">
                 <div className="max-w-7xl mx-auto">
                     <div className="flex items-center space-x-2 text-sm text-gray-600">
                         <Link href="/" className="hover:text-blue-600">Home</Link>
-                        {product.category.breadcrumb.map((cat, index) => (
+                        {product.category?.breadcrumb?.map((cat, index) => (
                             <React.Fragment key={cat.id}>
                                 <span>/</span>
                                 <Link
@@ -99,8 +134,8 @@ export default function ProductDetail({ product, relatedProducts, meta, auth }) 
                                         key={index}
                                         onClick={() => setSelectedImage(index)}
                                         className={`aspect-square rounded-lg overflow-hidden border-2 ${selectedImage === index
-                                                ? 'border-blue-600'
-                                                : 'border-gray-200 hover:border-gray-300'
+                                            ? 'border-blue-600'
+                                            : 'border-gray-200 hover:border-gray-300'
                                             }`}
                                     >
                                         <img
@@ -118,7 +153,7 @@ export default function ProductDetail({ product, relatedProducts, meta, auth }) 
                     <div className="space-y-6">
                         <div>
                             <div className="flex items-center space-x-2 text-sm text-blue-600 mb-2">
-                                <span>{product.category.name}</span>
+                                <span>{product.category?.name}</span>
                                 <div className="flex items-center">
                                     <TrendingUp className="h-4 w-4 mr-1" />
                                     <span>{product.sold_count} sold</span>
@@ -151,8 +186,8 @@ export default function ProductDetail({ product, relatedProducts, meta, auth }) 
                                     <div className="text-sm text-gray-500">per item</div>
                                 </div>
                                 <div className={`px-3 py-1 rounded-full text-sm font-medium ${product.is_in_stock
-                                        ? 'bg-green-100 text-green-800'
-                                        : 'bg-red-100 text-red-800'
+                                    ? 'bg-green-100 text-green-800'
+                                    : 'bg-red-100 text-red-800'
                                     }`}>
                                     {product.is_in_stock
                                         ? `${product.available_stock} available`
@@ -170,6 +205,7 @@ export default function ProductDetail({ product, relatedProducts, meta, auth }) 
                                         </label>
                                         <div className="flex items-center space-x-3">
                                             <button
+                                                type="button"
                                                 onClick={() => handleQuantityChange(quantity - 1)}
                                                 disabled={quantity <= (product.min_purchase || 1)}
                                                 className="p-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -185,6 +221,7 @@ export default function ProductDetail({ product, relatedProducts, meta, auth }) 
                                                 className="w-20 text-center border border-gray-300 rounded-md py-2"
                                             />
                                             <button
+                                                type="button"
                                                 onClick={() => handleQuantityChange(quantity + 1)}
                                                 disabled={
                                                     quantity >= product.available_stock ||
@@ -211,6 +248,7 @@ export default function ProductDetail({ product, relatedProducts, meta, auth }) 
 
                                     {/* Purchase Button */}
                                     <button
+                                        type="button"
                                         onClick={handlePurchase}
                                         disabled={processing || !product.is_in_stock}
                                         className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
@@ -258,7 +296,7 @@ export default function ProductDetail({ product, relatedProducts, meta, auth }) 
                 </div>
 
                 {/* Related Products */}
-                {relatedProducts.length > 0 && (
+                {relatedProducts && relatedProducts.length > 0 && (
                     <div className="mt-16">
                         <h2 className="text-2xl font-bold text-gray-900 mb-8">Related Products</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

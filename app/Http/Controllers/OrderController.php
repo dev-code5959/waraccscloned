@@ -14,10 +14,7 @@ use Inertia\Inertia;
 
 class OrderController extends Controller
 {
-    public function __construct()
-    {
-
-    }
+    public function __construct() {}
 
     public function create(Request $request, Product $product)
     {
@@ -62,9 +59,9 @@ class OrderController extends Controller
 
         // Validate product availability
         if (!$product->canPurchase($quantity)) {
-            return response()->json([
-                'message' => 'Product is not available in the requested quantity.',
-            ], 422);
+            return back()->withErrors([
+                'quantity' => 'Product is not available in the requested quantity.'
+            ])->withInput();
         }
 
         DB::beginTransaction();
@@ -80,6 +77,7 @@ class OrderController extends Controller
                 'total_amount' => $product->price * $quantity,
                 'status' => 'pending',
                 'payment_status' => 'pending',
+                'net_amount' => $product->price * $quantity
             ]);
 
             // Apply promo code if provided
@@ -104,16 +102,16 @@ class OrderController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'order' => $order->load('product'),
-                'message' => 'Order created successfully',
-                'redirect_url' => route('orders.payment', $order),
-            ]);
+            // Redirect to payment page with success message
+            return redirect()->route('orders.payment', $order)
+                ->with('success', 'Order created successfully');
         } catch (\Exception $e) {
             DB::rollback();
-            return response()->json([
-                'message' => 'Failed to create order: ' . $e->getMessage(),
-            ], 500);
+
+            // Return back with error message
+            return back()->withErrors([
+                'order' => 'Failed to create order: ' . $e->getMessage()
+            ])->withInput();
         }
     }
 
@@ -156,7 +154,7 @@ class OrderController extends Controller
         ]);
     }
 
-    public function payWithBalance(Order $order)
+    public function payWithBalance(Request $request, Order $order)
     {
         // Ensure user owns this order
         if ($order->user_id !== Auth::id()) {
@@ -167,9 +165,9 @@ class OrderController extends Controller
         $netAmount = $order->net_amount;
 
         if ($user->balance < $netAmount) {
-            return response()->json([
-                'message' => 'Insufficient balance',
-            ], 422);
+            return back()->withErrors([
+                'balance' => 'Insufficient balance'
+            ]);
         }
 
         DB::beginTransaction();
@@ -186,15 +184,14 @@ class OrderController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'message' => 'Payment successful! Your digital products have been delivered.',
-                'redirect_url' => route('dashboard.orders.show', $order),
-            ]);
+            return redirect()->route('dashboard.orders.show', $order)
+                ->with('success', 'Payment successful! Your digital products have been delivered.');
         } catch (\Exception $e) {
             DB::rollback();
-            return response()->json([
-                'message' => 'Payment failed: ' . $e->getMessage(),
-            ], 500);
+
+            return back()->withErrors([
+                'payment' => 'Payment failed: ' . $e->getMessage()
+            ]);
         }
     }
 
@@ -252,16 +249,14 @@ class OrderController extends Controller
         }
 
         if (!$order->can_be_cancelled) {
-            return response()->json([
-                'message' => 'This order cannot be cancelled',
-            ], 422);
+            return back()->withErrors([
+                'cancel' => 'This order cannot be cancelled'
+            ]);
         }
 
         $order->markAsCancelled('Cancelled by user');
 
-        return response()->json([
-            'message' => 'Order cancelled successfully',
-            'redirect_url' => route('dashboard.orders.index'),
-        ]);
+        return redirect()->route('dashboard.orders.index')
+            ->with('success', 'Order cancelled successfully');
     }
 }

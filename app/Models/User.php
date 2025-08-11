@@ -86,6 +86,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(User::class, 'referred_by');
     }
 
+    public function referredBy()
+    {
+        return $this->belongsTo(User::class, 'referred_by');
+    }
+
     public function assignedTickets()
     {
         return $this->hasMany(SupportTicket::class, 'assigned_to');
@@ -111,6 +116,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getFormattedBalanceAttribute()
     {
         return '$' . number_format($this->balance, 2);
+    }
+
+    public function getTwoFactorEnabledAttribute()
+    {
+        return !is_null($this->two_factor_secret);
     }
 
     // Helper Methods

@@ -70,31 +70,40 @@ Route::middleware(['auth', 'verified', 'role:customer|admin|support'])->prefix('
     Route::get('/orders', [DashboardOrdersController::class, 'index'])->name('dashboard.orders.index');
     Route::get('/orders/{order}', [DashboardOrdersController::class, 'show'])->name('dashboard.orders.show');
     Route::get('/orders/{order}/download', [DashboardOrdersController::class, 'downloadCredentials'])->name('dashboard.orders.download');
+    Route::get('/orders/{order}/invoice', [DashboardOrdersController::class, 'downloadInvoice'])->name('dashboard.orders.invoice'); // ADD THIS LINE
+
 
     // Funds & Transactions
-    // Route::get('/funds', [FundsController::class, 'index'])->name('dashboard.funds.index');
-    // Route::post('/funds/add', [FundsController::class, 'add'])->name('dashboard.funds.add');
-    // Route::post('/funds/crypto', [FundsController::class, 'createCryptoPayment'])->name('dashboard.funds.crypto');
-    // Route::get('/transactions', [TransactionsController::class, 'index'])->name('dashboard.transactions.index');
-    // Route::get('/transactions/{transaction}', [TransactionsController::class, 'show'])->name('dashboard.transactions.show');
+    Route::post('/funds/check-payment-status', [FundsController::class, 'checkPaymentStatus'])->name('api.funds.check-status');
+    Route::get('/funds', [FundsController::class, 'index'])->name('dashboard.funds.index');
+    Route::post('/funds/add', [FundsController::class, 'create'])->name('dashboard.funds.add');
+    Route::post('/funds/crypto', [FundsController::class, 'createCryptoPayment'])->name('dashboard.funds.crypto');
+    Route::get('/funds/payment/{paymentId}', [FundsController::class, 'showPayment'])->name('dashboard.funds.payment');
+
+
+    Route::get('/transactions', [TransactionsController::class, 'index'])->name('dashboard.transactions.index');
+    Route::get('/transactions/{transaction}', [TransactionsController::class, 'show'])->name('dashboard.transactions.show');
 
     // Support Tickets
-    // Route::get('/tickets', [TicketsController::class, 'index'])->name('dashboard.tickets.index');
-    // Route::get('/tickets/create', [TicketsController::class, 'create'])->name('dashboard.tickets.create');
-    // Route::post('/tickets', [TicketsController::class, 'store'])->name('dashboard.tickets.store');
-    // Route::get('/tickets/{ticket}', [TicketsController::class, 'show'])->name('dashboard.tickets.show');
-    // Route::post('/tickets/{ticket}/messages', [TicketsController::class, 'addMessage'])->name('dashboard.tickets.message');
+    Route::get('/tickets', [TicketsController::class, 'index'])->name('dashboard.tickets.index');
+    Route::get('/tickets/create', [TicketsController::class, 'create'])->name('dashboard.tickets.create');
+    Route::post('/tickets', [TicketsController::class, 'store'])->name('dashboard.tickets.store');
+    Route::get('/tickets/{ticket}', [TicketsController::class, 'show'])->name('dashboard.tickets.show');
+    Route::post('/tickets/{ticket}/messages', [TicketsController::class, 'addMessage'])->name('dashboard.tickets.message');
+    Route::post('/tickets/{ticket}/close', [TicketsController::class, 'close'])->name('dashboard.tickets.close');
 
     // Referrals
-    // Route::get('/referrals', [ReferralsController::class, 'index'])->name('dashboard.referrals.index');
-    // Route::post('/referrals/generate-code', [ReferralsController::class, 'generateCode'])->name('dashboard.referrals.generate');
+    Route::get('/referrals', [ReferralsController::class, 'index'])->name('dashboard.referrals.index');
+    Route::post('/referrals/generate-code', [ReferralsController::class, 'generateCode'])->name('dashboard.referrals.generate');
 
     // Profile
-    // Route::get('/profile', [DashboardProfileController::class, 'edit'])->name('dashboard.profile.edit');
-    // Route::patch('/profile', [DashboardProfileController::class, 'update'])->name('dashboard.profile.update');
-    // Route::delete('/profile', [DashboardProfileController::class, 'destroy'])->name('dashboard.profile.destroy');
-    // Route::post('/profile/2fa/enable', [DashboardProfileController::class, 'enableTwoFactor'])->name('dashboard.profile.2fa.enable');
-    // Route::delete('/profile/2fa/disable', [DashboardProfileController::class, 'disableTwoFactor'])->name('dashboard.profile.2fa.disable');
+    Route::get('/profile', [DashboardProfileController::class, 'edit'])->name('dashboard.profile.edit');
+    Route::patch('/profile', [DashboardProfileController::class, 'update'])->name('dashboard.profile.update');
+    Route::delete('/profile', [DashboardProfileController::class, 'destroy'])->name('dashboard.profile.destroy');
+    Route::post('/profile/2fa/enable', [DashboardProfileController::class, 'enableTwoFactor'])->name('dashboard.profile.2fa.enable');
+    Route::delete('/profile/2fa/disable', [DashboardProfileController::class, 'disableTwoFactor'])->name('dashboard.profile.2fa.disable');
+    Route::post('/profile/2fa/confirm', [DashboardProfileController::class, 'confirmTwoFactor'])->name('dashboard.profile.2fa.confirm');
+    Route::delete('/profile/2fa/disable', [DashboardProfileController::class, 'disableTwoFactor'])->name('dashboard.profile.2fa.disable');
 });
 
 // Admin Routes
@@ -189,7 +198,7 @@ Route::middleware('auth')->prefix('api')->group(function () {
 });
 
 // Webhook Routes (no auth required)
-// Route::post('/webhooks/nowpayments', [FundsController::class, 'nowpaymentsWebhook'])->name('webhooks.nowpayments');
+Route::post('/webhooks/nowpayments', [FundsController::class, 'nowpaymentsWebhook'])->name('webhooks.nowpayments');
 
 // Fallback route for SPA
 Route::fallback(function () {

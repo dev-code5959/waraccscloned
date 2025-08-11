@@ -15,6 +15,7 @@ class AccessCode extends Model
     protected $fillable = [
         'product_id',
         'email',
+        'username', // ADD THIS LINE IF NOT PRESENT
         'password',
         'additional_info',
         'status',
@@ -36,6 +37,17 @@ class AccessCode extends Model
         return LogOptions::defaults()
             ->logOnly(['status', 'order_id'])
             ->logOnlyDirty();
+    }
+
+    public function getUsernameAttribute()
+    {
+        // If no explicit username field, fall back to email
+        return $this->attributes['username'] ?? $this->email;
+    }
+
+    public function scopeDelivered($query)
+    {
+        return $query->where('status', 'delivered');
     }
 
     // Relationships
@@ -110,6 +122,7 @@ class AccessCode extends Model
         ]);
     }
 
+
     public function markAsReserved()
     {
         $this->update(['status' => 'reserved']);
@@ -138,5 +151,10 @@ class AccessCode extends Model
         }
 
         return $credentials;
+    }
+
+    public function getDeliveredAtAttribute()
+    {
+        return $this->sold_at; // Use sold_at as delivered_at for backward compatibility
     }
 }

@@ -18,11 +18,13 @@ class TicketMessage extends Model implements HasMedia
         'message',
         'attachments',
         'is_staff_reply',
+        'read_at',
     ];
 
     protected $casts = [
         'attachments' => 'json',
         'is_staff_reply' => 'boolean',
+        'read_at' => 'datetime'
     ];
 
     public function registerMediaCollections(): void
