@@ -78,7 +78,7 @@ class NowPaymentsService
     }
 
     /**
-     * Create a payment using hosted checkout
+     * Create a payment using hosted checkout with specific currency (legacy method)
      */
     public function createPayment($amount, $currency, $orderId, $user)
     {
@@ -134,6 +134,65 @@ class NowPaymentsService
     }
 
     /**
+     * Create a payment using hosted checkout without specifying currency (user chooses on hosted page)
+     */
+    public function createPaymentWithoutCurrency($amount, $orderId, $user)
+    {
+        try {
+            $invoiceData = [
+                'price_amount' => $amount,
+                'price_currency' => 'usd',
+                // No pay_currency specified - user will choose on hosted page
+                'ipn_callback_url' => config('nowpayments.callback_url'),
+                'order_id' => $orderId,
+                'order_description' => "Add funds to account - {$user->email}",
+                'success_url' => route('dashboard.funds.index') . '?success=1',
+                'cancel_url' => route('dashboard.funds.index') . '?cancelled=1',
+            ];
+
+            $response = Http::withHeaders([
+                'x-api-key' => $this->apiKey,
+                'Content-Type' => 'application/json',
+            ])->post("{$this->baseUrl}/invoice", $invoiceData);
+
+            if ($response->successful()) {
+                $invoice = $response->json();
+
+                // Create transaction record
+                Transaction::create([
+                    'user_id' => $user->id,
+                    'transaction_id' => $invoice['id'] ?? $orderId,
+                    'type' => 'deposit',
+                    'amount' => $amount,
+                    'net_amount' => $amount,
+                    'currency' => 'USD',
+                    'status' => 'pending',
+                    'payment_method' => 'crypto',
+                    'payment_currency' => null, // Will be updated from webhook
+                    'external_transaction_id' => $invoice['id'] ?? null,
+                    'metadata' => json_encode(array_merge($invoice, ['order_id' => $orderId])),
+                    'description' => "Crypto deposit - currency TBD",
+                ]);
+
+                return $invoice;
+            }
+
+            Log::error('NowPayments: Failed to create invoice', [
+                'status' => $response->status(),
+                'response' => $response->body(),
+                'data' => $invoiceData
+            ]);
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error('NowPayments: Exception creating invoice', [
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    /**
      * Get payment status
      */
     public function getPaymentStatus($paymentId)
@@ -174,6 +233,7 @@ class NowPaymentsService
             // For invoice API, the payment ID might be in different fields
             $paymentId = $data['payment_id'] ?? $data['id'] ?? null;
             $status = $data['payment_status'] ?? $data['status'] ?? null;
+            $orderId = $data['order_id'] ?? null;
 
             if (!$paymentId || !$status) {
                 Log::warning('NowPayments: Missing payment ID or status in callback', $data);
@@ -185,27 +245,30 @@ class NowPaymentsService
                 ->orWhere('transaction_id', $paymentId)
                 ->first();
 
-            if (!$transaction) {
-                // For invoice payments, try to find by order_id
-                $orderId = $data['order_id'] ?? null;
-                if ($orderId) {
-                    $transaction = Transaction::where('description', 'like', "%{$orderId}%")
-                        ->where('type', 'deposit')
-                        ->where('status', 'pending')
-                        ->first();
-                }
+            if (!$transaction && $orderId) {
+                // For invoice payments, try to find by order_id in metadata
+                $transaction = Transaction::where('metadata->order_id', $orderId)
+                    ->where('type', 'deposit')
+                    ->where('status', 'pending')
+                    ->first();
             }
 
             if (!$transaction) {
                 Log::warning('NowPayments: Transaction not found for payment', [
                     'payment_id' => $paymentId,
-                    'order_id' => $data['order_id'] ?? null
+                    'order_id' => $orderId
                 ]);
                 return false;
             }
 
-            // Update transaction status
-            $transaction->update([
+            // Get payment amounts from callback data
+            $priceAmount = $data['price_amount'] ?? $data['amount'] ?? null;
+            $priceCurrency = $data['price_currency'] ?? 'USD';
+            $payAmount = $data['pay_amount'] ?? null;
+            $payCurrency = $data['pay_currency'] ?? $data['currency'] ?? null;
+
+            // Update transaction with payment details
+            $updateData = [
                 'status' => $this->mapPaymentStatus($status),
                 'external_transaction_id' => $paymentId, // Ensure this is set
                 'metadata' => json_encode(array_merge(
@@ -213,18 +276,45 @@ class NowPaymentsService
                     $data
                 )),
                 'completed_at' => in_array($status, ['finished', 'confirmed', 'completed']) ? now() : null,
-            ]);
+            ];
+
+            // Update payment currency and amount if available
+            if ($payCurrency) {
+                $updateData['payment_currency'] = strtoupper($payCurrency);
+                $updateData['description'] = "Crypto deposit via {$payCurrency}";
+            }
+
+            if ($payAmount) {
+                $updateData['payment_amount'] = $payAmount;
+            }
+
+            // Verify the amount matches what we expected
+            if ($priceAmount && abs($transaction->amount - $priceAmount) > 0.01) {
+                Log::warning('NowPayments: Amount mismatch in callback', [
+                    'expected' => $transaction->amount,
+                    'received' => $priceAmount,
+                    'payment_id' => $paymentId
+                ]);
+            }
+
+            $transaction->update($updateData);
 
             // If payment is successful, add funds to user balance
             if (in_array($status, ['finished', 'confirmed', 'completed'])) {
                 $user = $transaction->user;
-                $user->increment('balance', $transaction->amount);
+                $amountToAdd = $transaction->amount;
 
-                Log::info('NowPayments: Funds added to user account via invoice', [
-                    'user_id' => $user->id,
-                    'amount' => $transaction->amount,
-                    'payment_id' => $paymentId
-                ]);
+                // Only add funds if they haven't been added already
+                if ($transaction->wasChanged('status') && $amountToAdd > 0) {
+                    $user->increment('balance', $amountToAdd);
+
+                    Log::info('NowPayments: Funds added to user account via invoice', [
+                        'user_id' => $user->id,
+                        'amount' => $amountToAdd,
+                        'payment_id' => $paymentId,
+                        'currency' => $payCurrency ?? 'unknown'
+                    ]);
+                }
             }
 
             return true;

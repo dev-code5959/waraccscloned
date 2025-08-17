@@ -13,25 +13,18 @@ import {
     Plus,
     Bitcoin,
     DollarSign,
-    ArrowUpRight,
-    Copy,
     ExternalLink
 } from 'lucide-react';
 
 export default function FundsIndex({
     user,
     recent_deposits,
-    supported_currencies,
     minimum_amount,
     maximum_amount,
     message
 }) {
-    const [selectedCurrency, setSelectedCurrency] = useState('btc');
-    const [showPaymentForm, setShowPaymentForm] = useState(false);
-
     const { data, setData, post, processing, errors, reset } = useForm({
         amount: '',
-        currency: 'btc',
     });
 
     const handleSubmit = (e) => {
@@ -39,26 +32,8 @@ export default function FundsIndex({
         post(route('dashboard.funds.add'), {
             onSuccess: () => {
                 reset();
-                setShowPaymentForm(false);
             },
         });
-    };
-
-    const copyToClipboard = (text) => {
-        navigator.clipboard.writeText(text);
-        // You could add a toast notification here
-    };
-
-    const getCurrencyIcon = (currency) => {
-        const icons = {
-            btc: '₿',
-            eth: 'Ξ',
-            usdt: '₮',
-            usdc: '$',
-            ltc: 'Ł',
-            bch: '₿',
-        };
-        return icons[currency] || '$';
     };
 
     const StatCard = ({ title, value, icon: Icon, color, description }) => (
@@ -102,8 +77,8 @@ export default function FundsIndex({
                 {/* Message Alert */}
                 {message && (
                     <div className={`rounded-lg p-4 ${message.type === 'success'
-                            ? 'bg-green-50 border border-green-200 text-green-800'
-                            : 'bg-red-50 border border-red-200 text-red-800'
+                        ? 'bg-green-50 border border-green-200 text-green-800'
+                        : 'bg-red-50 border border-red-200 text-red-800'
                         }`}>
                         <div className="flex items-center">
                             {message.type === 'success' ? (
@@ -148,153 +123,90 @@ export default function FundsIndex({
                             <div className="p-6 border-b border-gray-200">
                                 <h2 className="text-lg font-semibold text-gray-900 flex items-center">
                                     <Plus className="h-5 w-5 mr-2" />
-                                    Add Cryptocurrency
+                                    Add Funds
                                 </h2>
                                 <p className="text-sm text-gray-600 mt-1">
-                                    Choose your preferred cryptocurrency and amount
+                                    Enter the amount you want to add to your account
                                 </p>
                             </div>
 
                             <div className="p-6">
-                                {!showPaymentForm ? (
-                                    <div className="space-y-6">
-                                        {/* Currency Selection */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-3">
-                                                Select Cryptocurrency
-                                            </label>
-                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                                {Object.entries(supported_currencies).map(([key, currency]) => (
-                                                    <button
-                                                        key={key}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setSelectedCurrency(key);
-                                                            setData('currency', key);
-                                                        }}
-                                                        className={`p-4 border rounded-lg flex items-center space-x-3 transition-all ${selectedCurrency === key
-                                                                ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                                                : 'border-gray-200 hover:border-gray-300'
-                                                            }`}
-                                                    >
-                                                        <span className="text-xl font-bold">
-                                                            {getCurrencyIcon(key)}
-                                                        </span>
-                                                        <div className="text-left">
-                                                            <div className="font-medium">{currency.symbol}</div>
-                                                            <div className="text-xs text-gray-500">{currency.name}</div>
-                                                        </div>
-                                                    </button>
-                                                ))}
-                                            </div>
+                                <form onSubmit={handleSubmit} className="space-y-6">
+                                    {/* Amount Input */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Amount (USD)
+                                        </label>
+                                        <div className="relative">
+                                            <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                            <input
+                                                type="number"
+                                                value={data.amount}
+                                                onChange={(e) => setData('amount', e.target.value)}
+                                                min={minimum_amount}
+                                                max={maximum_amount}
+                                                step="0.01"
+                                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                placeholder={`${minimum_amount} - ${maximum_amount}`}
+                                            />
                                         </div>
-
-                                        {/* Amount Input */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Amount (USD)
-                                            </label>
-                                            <div className="relative">
-                                                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                                <input
-                                                    type="number"
-                                                    value={data.amount}
-                                                    onChange={(e) => setData('amount', e.target.value)}
-                                                    min={minimum_amount}
-                                                    max={maximum_amount}
-                                                    step="0.01"
-                                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                    placeholder={`${minimum_amount} - ${maximum_amount}`}
-                                                />
-                                            </div>
-                                            <p className="text-xs text-gray-500 mt-1">
-                                                Minimum: ${minimum_amount} • Maximum: ${maximum_amount}
-                                            </p>
-                                            {errors.amount && (
-                                                <p className="text-red-600 text-sm mt-1">{errors.amount}</p>
-                                            )}
-                                        </div>
-
-                                        {/* Quick Amount Buttons */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Quick Select
-                                            </label>
-                                            <div className="grid grid-cols-4 gap-2">
-                                                {[25, 50, 100, 250].map((amount) => (
-                                                    <button
-                                                        key={amount}
-                                                        type="button"
-                                                        onClick={() => setData('amount', amount.toString())}
-                                                        className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 focus:ring-2 focus:ring-blue-500"
-                                                    >
-                                                        ${amount}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-
-                                        {/* Submit Button */}
-                                        <button
-                                            onClick={() => setShowPaymentForm(true)}
-                                            disabled={!data.amount || processing}
-                                            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                                        >
-                                            <Wallet className="h-5 w-5 mr-2" />
-                                            Continue to Payment
-                                        </button>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Minimum: ${minimum_amount} • Maximum: ${maximum_amount}
+                                        </p>
+                                        {errors.amount && (
+                                            <p className="text-red-600 text-sm mt-1">{errors.amount}</p>
+                                        )}
                                     </div>
-                                ) : (
-                                    <form onSubmit={handleSubmit} className="space-y-6">
-                                        {/* Payment Summary */}
-                                        <div className="bg-gray-50 rounded-lg p-4">
-                                            <h3 className="font-medium text-gray-900 mb-2">Payment Summary</h3>
-                                            <div className="space-y-2 text-sm">
-                                                <div className="flex justify-between">
-                                                    <span>Amount:</span>
-                                                    <span className="font-medium">${data.amount} USD</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span>Currency:</span>
-                                                    <span className="font-medium">
-                                                        {supported_currencies[data.currency]?.name} ({supported_currencies[data.currency]?.symbol})
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span>Payment Method:</span>
-                                                    <span className="font-medium">Cryptocurrency</span>
-                                                </div>
+
+                                    {/* Quick Amount Buttons */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Quick Select
+                                        </label>
+                                        <div className="grid grid-cols-4 gap-2">
+                                            {[25, 50, 100, 250].map((amount) => (
+                                                <button
+                                                    key={amount}
+                                                    type="button"
+                                                    onClick={() => setData('amount', amount.toString())}
+                                                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 focus:ring-2 focus:ring-blue-500"
+                                                >
+                                                    ${amount}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Info Box */}
+                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                        <div className="flex items-start">
+                                            <CheckCircle className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+                                            <div className="text-sm text-blue-800">
+                                                <p className="font-medium mb-1">Choose Your Cryptocurrency</p>
+                                                <p>You'll be redirected to our secure payment page where you can select from multiple cryptocurrencies (Bitcoin, Ethereum, USDT, and more) to complete your ${data.amount || 'selected'} payment.</p>
                                             </div>
                                         </div>
+                                    </div>
 
-                                        <div className="flex space-x-3">
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowPaymentForm(false)}
-                                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                                            >
-                                                Back
-                                            </button>
-                                            <button
-                                                type="submit"
-                                                disabled={processing}
-                                                className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 flex items-center justify-center"
-                                            >
-                                                {processing ? (
-                                                    <>
-                                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                                        Processing...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <ExternalLink className="h-4 w-4 mr-2" />
-                                                        Proceed to Payment
-                                                    </>
-                                                )}
-                                            </button>
-                                        </div>
-                                    </form>
-                                )}
+                                    {/* Submit Button */}
+                                    <button
+                                        type="submit"
+                                        disabled={!data.amount || processing}
+                                        className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                                    >
+                                        {processing ? (
+                                            <>
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <ExternalLink className="h-5 w-5 mr-2" />
+                                                Continue to Payment
+                                            </>
+                                        )}
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -318,7 +230,7 @@ export default function FundsIndex({
                                 </div>
                                 <div className="flex items-start">
                                     <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                                    <span>No additional fees or charges</span>
+                                    <span>Multiple cryptocurrency options</span>
                                 </div>
                                 <div className="flex items-start">
                                     <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
@@ -333,18 +245,60 @@ export default function FundsIndex({
                                 <Bitcoin className="h-5 w-5 mr-2" />
                                 Supported Currencies
                             </h3>
-                            <div className="space-y-2">
-                                {Object.entries(supported_currencies).map(([key, currency]) => (
-                                    <div key={key} className="flex items-center justify-between text-sm">
-                                        <div className="flex items-center">
-                                            <span className="font-mono text-lg mr-2">
-                                                {getCurrencyIcon(key)}
-                                            </span>
-                                            <span>{currency.name}</span>
-                                        </div>
-                                        <span className="text-gray-500">{currency.symbol}</span>
-                                    </div>
-                                ))}
+                            <div className="space-y-2 text-sm text-gray-600">
+                                <div className="flex items-center">
+                                    <span className="font-mono text-lg mr-2">₿</span>
+                                    <span>Bitcoin (BTC)</span>
+                                </div>
+                                <div className="flex items-center">
+                                    <span className="font-mono text-lg mr-2">Ξ</span>
+                                    <span>Ethereum (ETH)</span>
+                                </div>
+                                <div className="flex items-center">
+                                    <span className="font-mono text-lg mr-2">₮</span>
+                                    <span>Tether (USDT)</span>
+                                </div>
+                                <div className="flex items-center">
+                                    <span className="font-mono text-lg mr-2">$</span>
+                                    <span>USD Coin (USDC)</span>
+                                </div>
+                                <div className="flex items-center">
+                                    <span className="font-mono text-lg mr-2">Ł</span>
+                                    <span>Litecoin (LTC)</span>
+                                </div>
+                                <div className="flex items-center">
+                                    <span className="font-mono text-lg mr-2">₿</span>
+                                    <span>Bitcoin Cash (BCH)</span>
+                                </div>
+                                <div className="text-xs text-gray-500 mt-2 pt-2 border-t">
+                                    And more options available on payment page
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* How It Works */}
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
+                                <Wallet className="h-5 w-5 mr-2" />
+                                How It Works
+                            </h3>
+                            <div className="space-y-3 text-sm text-gray-600">
+                                <div className="flex items-start">
+                                    <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium mr-3 mt-0.5 flex-shrink-0">1</div>
+                                    <span>Enter the amount you want to add</span>
+                                </div>
+                                <div className="flex items-start">
+                                    <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium mr-3 mt-0.5 flex-shrink-0">2</div>
+                                    <span>Get redirected to secure payment page</span>
+                                </div>
+                                <div className="flex items-start">
+                                    <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium mr-3 mt-0.5 flex-shrink-0">3</div>
+                                    <span>Choose your preferred cryptocurrency</span>
+                                </div>
+                                <div className="flex items-start">
+                                    <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium mr-3 mt-0.5 flex-shrink-0">4</div>
+                                    <span>Complete payment and receive funds instantly</span>
+                                </div>
                             </div>
                         </div>
                     </div>

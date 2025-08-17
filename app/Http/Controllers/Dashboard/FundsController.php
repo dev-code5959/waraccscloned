@@ -51,9 +51,6 @@ class FundsController extends Controller
                 ];
             });
 
-        // Get supported cryptocurrencies
-        $supportedCurrencies = config('nowpayments.supported_currencies');
-
         // Check for success/cancel messages
         $message = null;
         if ($request->get('success')) {
@@ -68,7 +65,6 @@ class FundsController extends Controller
                 'formatted_balance' => $user->formatted_balance,
             ],
             'recent_deposits' => $recentDeposits,
-            'supported_currencies' => $supportedCurrencies,
             'minimum_amount' => config('nowpayments.minimum_amount'),
             'maximum_amount' => config('nowpayments.maximum_amount'),
             'message' => $message,
@@ -79,19 +75,17 @@ class FundsController extends Controller
     {
         $request->validate([
             'amount' => 'required|numeric|min:' . config('nowpayments.minimum_amount') . '|max:' . config('nowpayments.maximum_amount'),
-            'currency' => 'required|string|in:' . implode(',', array_keys(config('nowpayments.supported_currencies'))),
         ]);
 
         $user = Auth::user();
         $amount = $request->amount;
-        $currency = $request->currency;
 
         // Generate unique order ID
         $orderId = 'FUND_' . strtoupper(Str::random(10)) . '_' . $user->id;
 
         try {
-            // Create invoice with NowPayments hosted checkout
-            $invoice = $this->nowPayments->createPayment($amount, $currency, $orderId, $user);
+            // Create invoice with NowPayments hosted checkout (let user choose currency on hosted page)
+            $invoice = $this->nowPayments->createPaymentWithoutCurrency($amount, $orderId, $user);
 
             if (!$invoice) {
                 return back()->withErrors(['payment' => 'Failed to create payment. Please try again.']);
@@ -103,8 +97,7 @@ class FundsController extends Controller
             Log::error('Funds: Exception creating payment', [
                 'error' => $e->getMessage(),
                 'user_id' => $user->id,
-                'amount' => $amount,
-                'currency' => $currency
+                'amount' => $amount
             ]);
 
             return back()->withErrors(['payment' => 'An error occurred while processing your request. Please try again.']);
