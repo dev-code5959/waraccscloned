@@ -140,7 +140,7 @@ export default function AdminLayout({ children }) {
             </div>
 
             {/* Main content */}
-            <div className="w-full">
+            <div className="w-full max-w-[calc(100vw-256px)]">
                 {/* Top bar */}
                 <div className="bg-white shadow-sm border-b border-gray-200">
                     <div className="flex items-center justify-between h-16 px-6">

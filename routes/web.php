@@ -129,12 +129,12 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
     Route::delete('/categories/{category}', [ProductManagementController::class, 'destroyCategory'])->name('admin.categories.destroy');
 
     // // Order Management
-    // Route::get('/orders', [OrderManagementController::class, 'index'])->name('admin.orders.index');
-    // Route::get('/orders/{order}', [OrderManagementController::class, 'show'])->name('admin.orders.show');
-    // Route::post('/orders/{order}/process', [OrderManagementController::class, 'process'])->name('admin.orders.process');
-    // Route::post('/orders/{order}/cancel', [OrderManagementController::class, 'cancel'])->name('admin.orders.cancel');
-    // Route::post('/orders/{order}/refund', [OrderManagementController::class, 'refund'])->name('admin.orders.refund');
-    // Route::post('/orders/{order}/assign-codes', [OrderManagementController::class, 'assignCodes'])->name('admin.orders.assign-codes');
+    Route::get('/orders', [OrderManagementController::class, 'index'])->name('admin.orders.index');
+    Route::get('/orders/{order}', [OrderManagementController::class, 'show'])->name('admin.orders.show');
+    Route::post('/orders/{order}/process', [OrderManagementController::class, 'process'])->name('admin.orders.process');
+    Route::post('/orders/{order}/cancel', [OrderManagementController::class, 'cancel'])->name('admin.orders.cancel');
+    Route::post('/orders/{order}/refund', [OrderManagementController::class, 'refund'])->name('admin.orders.refund');
+    Route::post('/orders/{order}/assign-codes', [OrderManagementController::class, 'assignCodes'])->name('admin.orders.assign-codes');
 
     // // User Management
     // Route::get('/users', [UserManagementController::class, 'index'])->name('admin.users.index');
