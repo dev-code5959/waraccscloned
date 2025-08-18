@@ -134,6 +134,8 @@ class ProductController extends Controller
             ->paginate(12)
             ->withQueryString();
 
+        dd($category);
+
         $products->getCollection()->transform(function ($product) {
             return [
                 'id' => $product->id,

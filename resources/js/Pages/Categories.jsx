@@ -4,20 +4,36 @@ import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AppLayout from '../Layouts/AppLayout';
 import {
-    Package,
-    Mail,
-    ShoppingBag,
-    ArrowRight,
-    Grid,
-    Users,
-    TrendingUp,
     Star,
-    ChevronRight
+    ShoppingBag,
+    Users,
+    Award,
+    ArrowRight,
+    TrendingUp,
+    Package,
+    Shield,
+    Mail,
+    CheckCircle
 } from 'lucide-react';
 
 export default function Categories({ categories, stats, meta }) {
-    const getCategoryIcon = (category) => {
-        // You can customize icons based on category names or add an icon field
+    const getStockBadge = (product) => {
+        if (!product.is_in_stock) {
+            return <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">Out of Stock</span>;
+        }
+        return <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">In Stock</span>;
+    };
+
+    const getPriceDisplay = (product) => {
+        return (
+            <div className="text-right">
+                <div className="text-sm text-gray-500 mb-1">from</div>
+                <div className="text-lg font-bold text-gray-900">{product.formatted_price}</div>
+            </div>
+        );
+    };
+
+    const getCategoryIcon = (categoryName) => {
         const iconMap = {
             'gmail': Mail,
             'facebook': Users,
@@ -29,185 +45,215 @@ export default function Categories({ categories, stats, meta }) {
             'social': Users,
         };
 
-        const IconComponent = iconMap[category.name.toLowerCase()] || Package;
-        return <IconComponent className="h-8 w-8" />;
+        const IconComponent = iconMap[categoryName.toLowerCase()] || Mail;
+        return IconComponent;
+    };
+
+    const getCategoryColor = (index) => {
+        const colors = [
+            'blue',
+            'purple',
+            'green',
+            'orange',
+            'red',
+            'indigo',
+            'pink',
+            'yellow'
+        ];
+        return colors[index % colors.length];
     };
 
     return (
         <AppLayout>
             <Head title={meta.title} />
 
-            {/* Header Section */}
-            <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-                    <div className="text-center">
-                        <div className="flex justify-center mb-6">
-                            <div className="bg-blue-600 rounded-full p-4">
-                                <Grid className="h-12 w-12 text-white" />
+            {/* Dynamic Category Sections */}
+            {categories.map((category, categoryIndex) => (
+                <section key={category.id} className={`py-12 ${categoryIndex % 2 === 0 ? 'bg-gray-50' : 'bg-white'}`}>
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="mb-8">
+                            <div className="flex items-center mb-2">
+                                <div className={`w-8 h-8 bg-${getCategoryColor(categoryIndex)}-100 rounded-lg flex items-center justify-center mr-3`}>
+                                    {React.createElement(getCategoryIcon(category.name), {
+                                        className: `h-5 w-5 text-${getCategoryColor(categoryIndex)}-600`
+                                    })}
+                                </div>
+                                <h2 className="text-2xl font-bold text-gray-900">{category.name}</h2>
                             </div>
+                            <p className="text-gray-600">
+                                {category.description || `Verified ${category.name} accounts with instant delivery`}
+                            </p>
                         </div>
-                        <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                            Browse Categories
-                        </h1>
-                        <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-                            Discover our wide range of digital products. From verified accounts to premium services,
-                            find exactly what you need with instant delivery and secure payments.
-                        </p>
 
-                        {/* Stats */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
-                            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                <div className="text-3xl font-bold text-blue-400">{stats.total_categories}</div>
-                                <div className="text-sm text-gray-300">Categories</div>
+                        <div className="bg-white rounded-lg shadow overflow-hidden">
+                            {/* Table Header */}
+                            <div className="bg-gray-800 text-white">
+                                <div className="grid grid-cols-12 gap-4 px-6 py-4 text-sm font-medium">
+                                    <div className="col-span-1"></div>
+                                    <div className="col-span-6">Product Description</div>
+                                    <div className="col-span-2 text-center">Stock</div>
+                                    <div className="col-span-2 text-center">Price</div>
+                                    <div className="col-span-1"></div>
+                                </div>
                             </div>
-                            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                <div className="text-3xl font-bold text-green-400">{stats.total_products}</div>
-                                <div className="text-sm text-gray-300">Products</div>
-                            </div>
-                            <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                <div className="text-3xl font-bold text-orange-400">{stats.in_stock_products}</div>
-                                <div className="text-sm text-gray-300">In Stock</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            {/* Categories Grid */}
-            <div className="bg-gray-50 py-16">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {categories.map((category) => (
-                            <div key={category.id} className="group">
-                                <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-200">
-                                    {/* Category Header */}
-                                    <div className="p-6 border-b border-gray-100">
-                                        <div className="flex items-start justify-between">
-                                            <div className="flex items-center">
-                                                <div className="bg-blue-100 group-hover:bg-blue-200 rounded-lg p-3 transition-colors">
-                                                    <div className="text-blue-600">
-                                                        {getCategoryIcon(category)}
-                                                    </div>
-                                                </div>
-                                                <div className="ml-4">
-                                                    <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                                                        {category.name}
-                                                    </h3>
-                                                    <p className="text-sm text-gray-500 mt-1">
-                                                        {category.products_count} products available
-                                                    </p>
+                            {/* Product Rows or Subcategories */}
+                            <div className="divide-y divide-gray-200">
+                                {category.children && category.children.length > 0 ? (
+                                    // Show subcategories if they exist
+                                    category.children.slice(0, 4).map((subcategory, index) => (
+                                        <div key={subcategory.id} className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors items-center">
+                                            <div className="col-span-1">
+                                                <div className={`w-12 h-12 bg-${getCategoryColor(categoryIndex)}-100 rounded-lg flex items-center justify-center`}>
+                                                    {React.createElement(getCategoryIcon(category.name), {
+                                                        className: `h-6 w-6 text-${getCategoryColor(categoryIndex)}-600`
+                                                    })}
                                                 </div>
                                             </div>
-                                            <ArrowRight className="h-5 w-5 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
-                                        </div>
 
-                                        {category.description && (
-                                            <p className="text-gray-600 mt-4 text-sm leading-relaxed">
-                                                {category.description}
-                                            </p>
-                                        )}
-                                    </div>
+                                            <div className="col-span-6">
+                                                <h3 className="font-medium text-gray-900 mb-1">{subcategory.name}</h3>
+                                                <p className="text-sm text-gray-600">
+                                                    Premium quality {subcategory.name.toLowerCase()} with verified credentials
+                                                </p>
+                                                <div className="flex items-center mt-2 text-xs text-green-600">
+                                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                                    <span>Verified | Instant Delivery | 24/7 Support</span>
+                                                </div>
+                                            </div>
 
-                                    {/* Subcategories */}
-                                    {category.children && category.children.length > 0 && (
-                                        <div className="p-6">
-                                            <h4 className="text-sm font-medium text-gray-700 mb-3">
-                                                Popular Types:
-                                            </h4>
-                                            <div className="space-y-2">
-                                                {category.children.slice(0, 4).map((child) => (
-                                                    <Link
-                                                        key={child.id}
-                                                        href={`/categories/${child.slug}`}
-                                                        className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors group/child"
-                                                    >
-                                                        <span className="text-sm text-gray-600 group-hover/child:text-gray-900">
-                                                            {child.name}
-                                                        </span>
-                                                        <div className="flex items-center text-xs text-gray-400">
-                                                            <span>{child.products_count}</span>
-                                                            <ChevronRight className="h-3 w-3 ml-1 group-hover/child:translate-x-0.5 transition-transform" />
-                                                        </div>
-                                                    </Link>
-                                                ))}
-                                                {category.children.length > 4 && (
-                                                    <div className="text-xs text-gray-500 pt-2">
-                                                        +{category.children.length - 4} more types
-                                                    </div>
-                                                )}
+                                            <div className="col-span-2 text-center">
+                                                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                                                    In Stock
+                                                </span>
+                                                <div className="text-sm text-gray-500 mt-1">
+                                                    {subcategory.products_count} products
+                                                </div>
+                                            </div>
+
+                                            <div className="col-span-2">
+                                                <div className="text-right">
+                                                    <div className="text-sm text-gray-500 mb-1">starting from</div>
+                                                    <div className="text-lg font-bold text-gray-900">$0.50</div>
+                                                </div>
+                                                <div className="text-xs text-gray-500 mt-1">Price per item</div>
+                                            </div>
+
+                                            <div className="col-span-1 text-right">
+                                                <Link
+                                                    href={`/categories/${subcategory.slug}`}
+                                                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded font-medium text-sm transition-colors inline-flex items-center"
+                                                >
+                                                    <ShoppingBag className="h-4 w-4 mr-1" />
+                                                    Browse
+                                                </Link>
                                             </div>
                                         </div>
-                                    )}
+                                    ))
+                                ) : (
+                                    // Show placeholder products if no subcategories
+                                    Array.from({ length: 3 }).map((_, index) => (
+                                        <div key={index} className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors items-center">
+                                            <div className="col-span-1">
+                                                <div className={`w-12 h-12 bg-${getCategoryColor(categoryIndex)}-100 rounded-lg flex items-center justify-center`}>
+                                                    {React.createElement(getCategoryIcon(category.name), {
+                                                        className: `h-6 w-6 text-${getCategoryColor(categoryIndex)}-600`
+                                                    })}
+                                                </div>
+                                            </div>
 
-                                    {/* Category Link */}
-                                    <div className="px-6 pb-6">
-                                        <Link
-                                            href={`/categories/${category.slug}`}
-                                            className="block w-full bg-gray-900 hover:bg-blue-600 text-white text-center py-3 rounded-lg font-medium transition-colors"
-                                        >
-                                            Browse {category.name}
-                                        </Link>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
+                                            <div className="col-span-6">
+                                                <h3 className="font-medium text-gray-900 mb-1">
+                                                    {category.name} Account - Premium Quality
+                                                </h3>
+                                                <p className="text-sm text-gray-600">
+                                                    Verified {category.name.toLowerCase()} account with full access and credentials
+                                                </p>
+                                                <div className="flex items-center mt-2 text-xs text-green-600">
+                                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                                    <span>Phone Verified | Email Access | Recovery Info</span>
+                                                </div>
+                                            </div>
 
-            {/* Popular Categories CTA */}
-            <div className="bg-white py-16">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 md:p-12 text-white">
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-                            <div>
-                                <h2 className="text-3xl font-bold mb-4">
-                                    Can't Find What You're Looking For?
-                                </h2>
-                                <p className="text-blue-100 mb-6 text-lg">
-                                    Use our powerful search to find specific products, or contact our support team
-                                    for custom requests and bulk orders.
-                                </p>
-                                <div className="flex flex-col sm:flex-row gap-4">
-                                    <Link
-                                        href="/search"
-                                        className="bg-white text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
-                                    >
-                                        <TrendingUp className="h-5 w-5 mr-2" />
-                                        Search Products
-                                    </Link>
-                                    <Link
-                                        href="/contact"
-                                        className="border border-white/30 text-white px-6 py-3 rounded-lg font-medium hover:bg-white/10 transition-colors inline-flex items-center justify-center"
-                                    >
-                                        Contact Support
-                                    </Link>
-                                </div>
+                                            <div className="col-span-2 text-center">
+                                                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                                                    In Stock
+                                                </span>
+                                                <div className="text-sm text-gray-500 mt-1">50+ available</div>
+                                            </div>
+
+                                            <div className="col-span-2">
+                                                <div className="text-right">
+                                                    <div className="text-sm text-gray-500 mb-1">from</div>
+                                                    <div className="text-lg font-bold text-gray-900">
+                                                        ${(Math.random() * 2 + 0.5).toFixed(2)}
+                                                    </div>
+                                                </div>
+                                                <div className="text-xs text-gray-500 mt-1">Price per account</div>
+                                            </div>
+
+                                            <div className="col-span-1 text-right">
+                                                <Link
+                                                    href={`/categories/${category.slug}`}
+                                                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded font-medium text-sm transition-colors inline-flex items-center"
+                                                >
+                                                    <ShoppingBag className="h-4 w-4 mr-1" />
+                                                    Buy
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
                             </div>
-                            <div className="hidden lg:block">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                        <Star className="h-8 w-8 text-yellow-400 mb-2" />
-                                        <div className="text-sm">Premium Quality</div>
-                                    </div>
-                                    <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                        <ShoppingBag className="h-8 w-8 text-green-400 mb-2" />
-                                        <div className="text-sm">Instant Delivery</div>
-                                    </div>
-                                    <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                        <Package className="h-8 w-8 text-blue-400 mb-2" />
-                                        <div className="text-sm">Secure Payments</div>
-                                    </div>
-                                    <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                        <Users className="h-8 w-8 text-purple-400 mb-2" />
-                                        <div className="text-sm">24/7 Support</div>
-                                    </div>
-                                </div>
+
+                            {/* View More */}
+                            <div className="bg-gray-50 px-6 py-4 text-center">
+                                <Link
+                                    href={`/categories/${category.slug}`}
+                                    className="text-orange-500 hover:text-orange-600 font-medium transition-colors"
+                                >
+                                    view all {category.name.toLowerCase()} products
+                                </Link>
                             </div>
                         </div>
                     </div>
+                </section>
+            ))}
+
+            {/* Features Section */}
+            <section className="py-12 bg-white">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div className="text-center">
+                            <div className="bg-blue-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                                <Package className="h-8 w-8 text-blue-600" />
+                            </div>
+                            <h3 className="text-xl font-semibold mb-2">Instant Delivery</h3>
+                            <p className="text-gray-600">
+                                Receive your digital products immediately after payment confirmation.
+                            </p>
+                        </div>
+                        <div className="text-center">
+                            <div className="bg-green-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                                <Shield className="h-8 w-8 text-green-600" />
+                            </div>
+                            <h3 className="text-xl font-semibold mb-2">Secure Payments</h3>
+                            <p className="text-gray-600">
+                                Pay with cryptocurrency or account balance. All transactions are encrypted.
+                            </p>
+                        </div>
+                        <div className="text-center">
+                            <div className="bg-orange-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                                <Award className="h-8 w-8 text-orange-600" />
+                            </div>
+                            <h3 className="text-xl font-semibold mb-2">Quality Guaranteed</h3>
+                            <p className="text-gray-600">
+                                All products are tested and verified. Get support if you encounter issues.
+                            </p>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </section>
         </AppLayout>
     );
 }
