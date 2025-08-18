@@ -52,7 +52,6 @@ class ProductController extends Controller
         ]);
     }
 
-
     public function show(Product $product)
     {
         // Load relationships
@@ -121,27 +120,84 @@ class ProductController extends Controller
         ]);
     }
 
-    public function category(Category $category)
+    public function category(Request $request, Category $category)
     {
         $category->load('children');
+
+        // Get filter parameters
+        $sortBy = $request->get('sort', 'name');
+        $priceMin = $request->get('price_min', 0);
+        $priceMax = $request->get('price_max', 1000);
+        $inStockOnly = $request->boolean('in_stock');
+        $phoneVerified = $request->boolean('phone_verified');
+        $smtpEnabled = $request->boolean('smtp_enabled');
+        $perPage = $request->get('per_page', 12);
 
         // Get all product IDs for this category and its children
         $productIds = $category->getAllProductIds();
 
-        $products = Product::with(['category', 'media'])
+        // Build the query
+        $productsQuery = Product::with(['category', 'media'])
             ->whereIn('id', $productIds)
-            ->active()
-            ->paginate(12)
-            ->withQueryString();
+            ->where('is_active', true);
 
-        dd($category);
+        // Apply filters
+        if ($inStockOnly) {
+            $productsQuery->where('stock_quantity', '>', 0);
+        }
 
+        if ($priceMin > 0 || $priceMax < 1000) {
+            $productsQuery->whereBetween('price', [$priceMin, $priceMax]);
+        }
+
+        if ($phoneVerified) {
+            $productsQuery->where(function ($query) {
+                $query->where('features', 'like', '%phone%verified%')
+                    ->orWhere('features', 'like', '%phone%')
+                    ->orWhere('name', 'like', '%PVA%')
+                    ->orWhere('description', 'like', '%phone%verified%');
+            });
+        }
+
+        if ($smtpEnabled) {
+            $productsQuery->where(function ($query) {
+                $query->where('features', 'like', '%smtp%')
+                    ->orWhere('name', 'like', '%smtp%')
+                    ->orWhere('description', 'like', '%smtp%');
+            });
+        }
+
+        // Apply sorting
+        switch ($sortBy) {
+            case 'price_asc':
+                $productsQuery->orderBy('price', 'asc');
+                break;
+            case 'price_desc':
+                $productsQuery->orderBy('price', 'desc');
+                break;
+            case 'created_at':
+                $productsQuery->orderBy('created_at', 'desc');
+                break;
+            case 'popularity':
+                $productsQuery->orderBy('sold_count', 'desc');
+                break;
+            case 'name':
+            default:
+                $productsQuery->orderBy('name', 'asc');
+                break;
+        }
+
+        // Get paginated results
+        $products = $productsQuery->paginate($perPage)->withQueryString();
+
+        // Transform products data
         $products->getCollection()->transform(function ($product) {
             return [
                 'id' => $product->id,
                 'name' => $product->name,
                 'slug' => $product->slug,
                 'description' => $product->description,
+                'features' => $product->features,
                 'price' => $product->price,
                 'formatted_price' => $product->formatted_price,
                 'category' => [
@@ -151,6 +207,7 @@ class ProductController extends Controller
                 ],
                 'thumbnail' => $product->thumbnail,
                 'stock_quantity' => $product->stock_quantity,
+                'available_stock' => $product->available_stock ?? $product->stock_quantity,
                 'sold_count' => $product->sold_count,
                 'is_in_stock' => $product->is_in_stock,
             ];
@@ -191,17 +248,19 @@ class ProductController extends Controller
                 'last_page' => $products->lastPage(),
                 'per_page' => $products->perPage(),
                 'total' => $products->total(),
+                'from' => $products->firstItem(),
+                'to' => $products->lastItem(),
                 'prev_page_url' => $products->previousPageUrl(),
                 'next_page_url' => $products->nextPageUrl(),
                 'path' => $products->path(),
             ],
             'filters' => [
-                'sort' => 'name',
-                'in_stock' => false,
-                'phone_verified' => false,
-                'smtp_enabled' => false,
-                'price_min' => 0,
-                'price_max' => 1000,
+                'sort' => $sortBy,
+                'in_stock' => $inStockOnly,
+                'phone_verified' => $phoneVerified,
+                'smtp_enabled' => $smtpEnabled,
+                'price_min' => $priceMin,
+                'price_max' => $priceMax,
             ],
             'meta' => [
                 'title' => $category->name . ' - Digital Products',

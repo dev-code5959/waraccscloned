@@ -109,24 +109,24 @@ Route::middleware(['auth', 'verified', 'role:customer|admin|support'])->prefix('
 
 // Admin Routes
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(function () {
-    // Route::get('/', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+    Route::get('/', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
 
     // // Product Management
-    // Route::get('/products', [ProductManagementController::class, 'index'])->name('admin.products.index');
-    // Route::get('/products/create', [ProductManagementController::class, 'create'])->name('admin.products.create');
-    // Route::post('/products', [ProductManagementController::class, 'store'])->name('admin.products.store');
-    // Route::get('/products/{product}', [ProductManagementController::class, 'show'])->name('admin.products.show');
-    // Route::get('/products/{product}/edit', [ProductManagementController::class, 'edit'])->name('admin.products.edit');
-    // Route::put('/products/{product}', [ProductManagementController::class, 'update'])->name('admin.products.update');
-    // Route::delete('/products/{product}', [ProductManagementController::class, 'destroy'])->name('admin.products.destroy');
-    // Route::post('/products/{product}/access-codes/bulk', [ProductManagementController::class, 'bulkUploadCodes'])->name('admin.products.codes.bulk');
-    // Route::post('/products/{product}/toggle-status', [ProductManagementController::class, 'toggleStatus'])->name('admin.products.toggle-status');
+    Route::get('/products', [ProductManagementController::class, 'index'])->name('admin.products.index');
+    Route::get('/products/create', [ProductManagementController::class, 'create'])->name('admin.products.create');
+    Route::post('/products', [ProductManagementController::class, 'store'])->name('admin.products.store');
+    Route::get('/products/{product}', [ProductManagementController::class, 'show'])->name('admin.products.show');
+    Route::get('/products/{product}/edit', [ProductManagementController::class, 'edit'])->name('admin.products.edit');
+    Route::post('/products/{product}', [ProductManagementController::class, 'update'])->name('admin.products.update');
+    Route::delete('/products/{product}', [ProductManagementController::class, 'destroy'])->name('admin.products.destroy');
+    Route::post('/products/{product}/access-codes/bulk', [ProductManagementController::class, 'bulkUploadCodes'])->name('admin.products.codes.bulk');
+    Route::post('/products/{product}/toggle-status', [ProductManagementController::class, 'toggleStatus'])->name('admin.products.toggle-status');
 
     // // Category Management
-    // Route::get('/categories', [ProductManagementController::class, 'categories'])->name('admin.categories.index');
-    // Route::post('/categories', [ProductManagementController::class, 'storeCategory'])->name('admin.categories.store');
-    // Route::put('/categories/{category}', [ProductManagementController::class, 'updateCategory'])->name('admin.categories.update');
-    // Route::delete('/categories/{category}', [ProductManagementController::class, 'destroyCategory'])->name('admin.categories.destroy');
+    Route::get('/categories', [ProductManagementController::class, 'categories'])->name('admin.categories.index');
+    Route::post('/categories', [ProductManagementController::class, 'storeCategory'])->name('admin.categories.store');
+    Route::put('/categories/{category}', [ProductManagementController::class, 'updateCategory'])->name('admin.categories.update');
+    Route::delete('/categories/{category}', [ProductManagementController::class, 'destroyCategory'])->name('admin.categories.destroy');
 
     // // Order Management
     // Route::get('/orders', [OrderManagementController::class, 'index'])->name('admin.orders.index');
