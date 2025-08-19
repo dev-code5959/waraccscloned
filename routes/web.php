@@ -137,22 +137,22 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
     Route::post('/orders/{order}/assign-codes', [OrderManagementController::class, 'assignCodes'])->name('admin.orders.assign-codes');
 
     // // User Management
-    // Route::get('/users', [UserManagementController::class, 'index'])->name('admin.users.index');
-    // Route::get('/users/create', [UserManagementController::class, 'create'])->name('admin.users.create');
-    // Route::post('/users', [UserManagementController::class, 'store'])->name('admin.users.store');
-    // Route::get('/users/{user}', [UserManagementController::class, 'show'])->name('admin.users.show');
-    // Route::get('/users/{user}/edit', [UserManagementController::class, 'edit'])->name('admin.users.edit');
-    // Route::put('/users/{user}', [UserManagementController::class, 'update'])->name('admin.users.update');
-    // Route::post('/users/{user}/suspend', [UserManagementController::class, 'suspend'])->name('admin.users.suspend');
-    // Route::post('/users/{user}/activate', [UserManagementController::class, 'activate'])->name('admin.users.activate');
-    // Route::post('/users/{user}/add-balance', [UserManagementController::class, 'addBalance'])->name('admin.users.add-balance');
+    Route::get('/users', [UserManagementController::class, 'index'])->name('admin.users.index');
+    Route::get('/users/create', [UserManagementController::class, 'create'])->name('admin.users.create');
+    Route::post('/users', [UserManagementController::class, 'store'])->name('admin.users.store');
+    Route::get('/users/{user}', [UserManagementController::class, 'show'])->name('admin.users.show');
+    Route::get('/users/{user}/edit', [UserManagementController::class, 'edit'])->name('admin.users.edit');
+    Route::put('/users/{user}', [UserManagementController::class, 'update'])->name('admin.users.update');
+    Route::post('/users/{user}/suspend', [UserManagementController::class, 'suspend'])->name('admin.users.suspend');
+    Route::post('/users/{user}/activate', [UserManagementController::class, 'activate'])->name('admin.users.activate');
+    Route::post('/users/{user}/add-balance', [UserManagementController::class, 'addBalance'])->name('admin.users.add-balance');
 
-    // // Transaction Management
-    // Route::get('/transactions', [TransactionManagementController::class, 'index'])->name('admin.transactions.index');
-    // Route::get('/transactions/{transaction}', [TransactionManagementController::class, 'show'])->name('admin.transactions.show');
-    // Route::post('/transactions/{transaction}/approve', [TransactionManagementController::class, 'approve'])->name('admin.transactions.approve');
-    // Route::post('/transactions/{transaction}/reject', [TransactionManagementController::class, 'reject'])->name('admin.transactions.reject');
-    // Route::post('/transactions/create', [TransactionManagementController::class, 'create'])->name('admin.transactions.create');
+    // Transaction Management
+    Route::get('/transactions', [TransactionManagementController::class, 'index'])->name('admin.transactions.index');
+    Route::get('/transactions/{transaction}', [TransactionManagementController::class, 'show'])->name('admin.transactions.show');
+    Route::post('/transactions/{transaction}/approve', [TransactionManagementController::class, 'approve'])->name('admin.transactions.approve');
+    Route::post('/transactions/{transaction}/reject', [TransactionManagementController::class, 'reject'])->name('admin.transactions.reject');
+    Route::post('/transactions/create', [TransactionManagementController::class, 'create'])->name('admin.transactions.create');
 
     // // Support Management
     // Route::get('/support', [SupportManagementController::class, 'index'])->name('admin.support.index');

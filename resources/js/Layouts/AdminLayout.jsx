@@ -33,7 +33,6 @@ export default function AdminLayout({ children }) {
         { name: 'Users', href: '/admin/users', icon: Users },
         { name: 'Transactions', href: '/admin/transactions', icon: CreditCard },
         { name: 'Support', href: '/admin/support', icon: MessageCircle },
-        { name: 'Promo Codes', href: '/admin/promo-codes', icon: Tag },
         { name: 'CMS Pages', href: '/admin/cms', icon: FileText },
         { name: 'Reports', href: '/admin/reports', icon: BarChart3 },
     ];
