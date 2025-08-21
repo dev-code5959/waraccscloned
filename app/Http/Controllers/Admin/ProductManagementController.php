@@ -44,7 +44,16 @@ class ProductManagementController extends Controller
             if ($request->stock === 'in_stock') {
                 $query->inStock();
             } elseif ($request->stock === 'out_of_stock') {
-                $query->where('stock_quantity', 0);
+                $query->where('manual_delivery', false)->where('stock_quantity', 0);
+            }
+        }
+
+        // Delivery type filter
+        if ($request->filled('delivery_type')) {
+            if ($request->delivery_type === 'manual') {
+                $query->where('manual_delivery', true);
+            } elseif ($request->delivery_type === 'automatic') {
+                $query->where('manual_delivery', false);
             }
         }
 
@@ -60,7 +69,7 @@ class ProductManagementController extends Controller
         return Inertia::render('Admin/Products/Index', [
             'products' => $products,
             'categories' => $categories,
-            'filters' => $request->only(['search', 'category', 'status', 'stock', 'sort_field', 'sort_direction'])
+            'filters' => $request->only(['search', 'category', 'status', 'stock', 'delivery_type', 'sort_field', 'sort_direction'])
         ]);
     }
 
@@ -77,12 +86,13 @@ class ProductManagementController extends Controller
             'reserved_codes' => $product->accessCodes()->where('status', 'reserved')->count(),
             'total_orders' => $product->orders()->count(),
             'total_revenue' => $product->orders()->where('status', 'completed')->sum('total_amount'),
+            'is_manual_delivery' => $product->manual_delivery,
         ];
 
         return Inertia::render('Admin/Products/Show', [
             'product' => [
                 ...$product->toArray(),
-                'access_codes' => $product->accessCodes()
+                'access_codes' => $product->manual_delivery ? [] : $product->accessCodes()
                     ->get()
                     ->transform(function ($accessCode) {
                         return [
@@ -118,6 +128,7 @@ class ProductManagementController extends Controller
             'delivery_info' => 'nullable|string',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
+            'manual_delivery' => 'boolean',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048'
         ]);
@@ -133,6 +144,13 @@ class ProductManagementController extends Controller
         while (Product::where('slug', $validated['slug'])->exists()) {
             $validated['slug'] = $baseSlug . '-' . $counter;
             $counter++;
+        }
+
+        // Set stock quantity to 0 for manual delivery products
+        if ($validated['manual_delivery'] ?? false) {
+            $validated['stock_quantity'] = 0;
+        } else {
+            $validated['stock_quantity'] = 0; // Will be updated when access codes are added
         }
 
         DB::beginTransaction();
@@ -182,6 +200,7 @@ class ProductManagementController extends Controller
             'delivery_info' => 'nullable|string',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
+            'manual_delivery' => 'boolean',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'remove_images' => 'nullable|array',
@@ -193,9 +212,20 @@ class ProductManagementController extends Controller
             $validated['slug'] = Str::slug($validated['name']);
         }
 
+        // If switching to manual delivery, clear access codes warning
+        $switchingToManual = !$product->manual_delivery && ($validated['manual_delivery'] ?? false);
+
         DB::beginTransaction();
         try {
             $product->update($validated);
+
+            // If switching to manual delivery, update stock quantity
+            if ($switchingToManual) {
+                $product->update(['stock_quantity' => 0]);
+            } elseif (!$validated['manual_delivery'] ?? true) {
+                // If switching from manual to automatic, update stock based on access codes
+                $product->updateStock();
+            }
 
             // Handle image removals
             if ($request->filled('remove_images')) {
@@ -212,8 +242,13 @@ class ProductManagementController extends Controller
 
             DB::commit();
 
+            $message = 'Product updated successfully.';
+            if ($switchingToManual) {
+                $message .= ' Note: Product is now set to manual delivery - access codes will not be automatically assigned.';
+            }
+
             return redirect()->route('admin.products.show', $product)
-                ->with('success', 'Product updated successfully.');
+                ->with('success', $message);
         } catch (\Exception $e) {
             DB::rollback();
             return back()->withErrors(['error' => 'Failed to update product: ' . $e->getMessage()]);
@@ -229,8 +264,10 @@ class ProductManagementController extends Controller
                 return back()->withErrors(['error' => 'Cannot delete product with active orders.']);
             }
 
-            // Delete all access codes
-            $product->accessCodes()->delete();
+            // Delete all access codes (only for non-manual delivery products)
+            if (!$product->manual_delivery) {
+                $product->accessCodes()->delete();
+            }
 
             // Delete media
             $product->clearMediaCollection('images');
@@ -259,6 +296,11 @@ class ProductManagementController extends Controller
 
     public function bulkUploadCodes(Request $request, Product $product)
     {
+        // Prevent uploading codes for manual delivery products
+        if ($product->manual_delivery) {
+            return back()->withErrors(['error' => 'Cannot upload access codes for manual delivery products.']);
+        }
+
         $request->validate([
             'codes' => 'required|string',
             'format' => 'required|in:email:password,username:password,email_only,custom'

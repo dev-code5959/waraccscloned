@@ -27,6 +27,7 @@ class Product extends Model implements HasMedia
         'images',
         'is_featured',
         'is_active',
+        'manual_delivery',
         'min_purchase',
         'max_purchase',
         'delivery_info',
@@ -39,6 +40,7 @@ class Product extends Model implements HasMedia
         'images' => 'json',
         'is_featured' => 'boolean',
         'is_active' => 'boolean',
+        'manual_delivery' => 'boolean',
         'min_purchase' => 'integer',
         'max_purchase' => 'integer',
     ];
@@ -46,7 +48,7 @@ class Product extends Model implements HasMedia
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'price', 'stock_quantity', 'is_active'])
+            ->logOnly(['name', 'price', 'stock_quantity', 'is_active', 'manual_delivery'])
             ->logOnlyDirty();
     }
 
@@ -103,7 +105,10 @@ class Product extends Model implements HasMedia
 
     public function scopeInStock($query)
     {
-        return $query->where('stock_quantity', '>', 0);
+        return $query->where(function ($q) {
+            $q->where('manual_delivery', true)
+                ->orWhere('stock_quantity', '>', 0);
+        });
     }
 
     public function scopePopular($query)
@@ -115,8 +120,8 @@ class Product extends Model implements HasMedia
     {
         return $query->where(function ($q) use ($term) {
             $q->where('name', 'like', "%{$term}%")
-              ->orWhere('description', 'like', "%{$term}%")
-              ->orWhere('features', 'like', "%{$term}%");
+                ->orWhere('description', 'like', "%{$term}%")
+                ->orWhere('features', 'like', "%{$term}%");
         });
     }
 
@@ -144,12 +149,23 @@ class Product extends Model implements HasMedia
 
     public function getIsInStockAttribute()
     {
-        return $this->stock_quantity > 0;
+        return $this->manual_delivery || $this->stock_quantity > 0;
     }
 
     public function getAvailableStockAttribute()
     {
+        if ($this->manual_delivery) {
+            return PHP_INT_MAX; // Infinite stock for manual delivery
+        }
         return $this->availableAccessCodes()->count();
+    }
+
+    public function getEffectiveStockQuantityAttribute()
+    {
+        if ($this->manual_delivery) {
+            return PHP_INT_MAX; // Infinite stock for manual delivery
+        }
+        return $this->stock_quantity;
     }
 
     public function getMainImageAttribute()
@@ -180,13 +196,18 @@ class Product extends Model implements HasMedia
     public function canPurchase($quantity = 1)
     {
         return $this->is_active &&
-               $this->available_stock >= $quantity &&
-               $quantity >= $this->min_purchase &&
-               ($this->max_purchase === null || $quantity <= $this->max_purchase);
+            ($this->manual_delivery || $this->available_stock >= $quantity) &&
+            $quantity >= $this->min_purchase &&
+            ($this->max_purchase === null || $quantity <= $this->max_purchase);
     }
 
     public function reserveAccessCodes($quantity)
     {
+        if ($this->manual_delivery) {
+            // For manual delivery, we don't need to reserve access codes
+            return collect();
+        }
+
         $codes = $this->availableAccessCodes()
             ->limit($quantity)
             ->get();
@@ -204,6 +225,12 @@ class Product extends Model implements HasMedia
 
     public function updateStock()
     {
+        if ($this->manual_delivery) {
+            // For manual delivery products, we don't track stock quantity
+            $this->update(['stock_quantity' => 0]);
+            return PHP_INT_MAX;
+        }
+
         $availableCount = $this->availableAccessCodes()->count();
         $this->update(['stock_quantity' => $availableCount]);
         return $availableCount;
@@ -212,5 +239,15 @@ class Product extends Model implements HasMedia
     public function incrementSoldCount($quantity = 1)
     {
         $this->increment('sold_count', $quantity);
+    }
+
+    public function isManualDelivery()
+    {
+        return $this->manual_delivery;
+    }
+
+    public function hasAccessCodes()
+    {
+        return !$this->manual_delivery && $this->accessCodes()->exists();
     }
 }

@@ -9,7 +9,10 @@ import {
     Upload,
     X,
     Image as ImageIcon,
-    AlertCircle
+    AlertCircle,
+    Truck,
+    Zap,
+    Info
 } from 'lucide-react';
 
 export default function Create({ categories }) {
@@ -27,6 +30,7 @@ export default function Create({ categories }) {
         delivery_info: '',
         is_featured: false,
         is_active: true,
+        manual_delivery: false,
         images: []
     });
 
@@ -218,6 +222,80 @@ export default function Create({ categories }) {
                         </div>
                     </div>
 
+                    {/* Delivery Method */}
+                    <div className="bg-white shadow rounded-lg p-6">
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">Delivery Method</h3>
+
+                        <div className="space-y-4">
+                            <div className="flex items-start space-x-4">
+                                <div className="flex items-center h-5">
+                                    <input
+                                        type="radio"
+                                        id="automatic_delivery"
+                                        name="delivery_method"
+                                        checked={!data.manual_delivery}
+                                        onChange={() => setData('manual_delivery', false)}
+                                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label htmlFor="automatic_delivery" className="flex items-center text-sm font-medium text-gray-900 cursor-pointer">
+                                        <Zap className="w-4 h-4 mr-2 text-green-500" />
+                                        Automatic Delivery
+                                    </label>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                        Access codes are automatically delivered upon payment confirmation. Requires pre-uploaded access codes.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-start space-x-4">
+                                <div className="flex items-center h-5">
+                                    <input
+                                        type="radio"
+                                        id="manual_delivery"
+                                        name="delivery_method"
+                                        checked={data.manual_delivery}
+                                        onChange={() => setData('manual_delivery', true)}
+                                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label htmlFor="manual_delivery" className="flex items-center text-sm font-medium text-gray-900 cursor-pointer">
+                                        <Truck className="w-4 h-4 mr-2 text-blue-500" />
+                                        Manual Delivery
+                                    </label>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                        Orders will be marked as pending delivery. Admin manually uploads and delivers access codes to customers.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {data.manual_delivery && (
+                            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+                                <div className="flex items-start">
+                                    <Info className="w-5 h-5 text-blue-400 mt-0.5 mr-3 flex-shrink-0" />
+                                    <div>
+                                        <h4 className="text-sm font-medium text-blue-800">Manual Delivery Mode</h4>
+                                        <div className="mt-1 text-sm text-blue-700">
+                                            <ul className="list-disc list-inside space-y-1">
+                                                <li>Stock quantity will be infinite</li>
+                                                <li>Access code upload will be disabled</li>
+                                                <li>Orders will require manual processing</li>
+                                                <li>Customers will be notified when their order is ready</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {errors.manual_delivery && (
+                            <p className="mt-1 text-sm text-red-600">{errors.manual_delivery}</p>
+                        )}
+                    </div>
+
                     {/* Purchase Settings */}
                     <div className="bg-white shadow rounded-lg p-6">
                         <h3 className="text-lg font-medium text-gray-900 mb-4">Purchase Settings</h3>
@@ -250,7 +328,7 @@ export default function Create({ categories }) {
                                     value={data.max_purchase}
                                     onChange={(e) => setData('max_purchase', e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="No limit"
+                                    placeholder={data.manual_delivery ? "No limit (Manual Delivery)" : "No limit"}
                                 />
                                 {errors.max_purchase && (
                                     <p className="mt-1 text-sm text-red-600">{errors.max_purchase}</p>

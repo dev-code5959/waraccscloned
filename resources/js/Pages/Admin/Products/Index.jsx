@@ -17,7 +17,10 @@ import {
     Download,
     AlertCircle,
     CheckCircle,
-    XCircle
+    XCircle,
+    Truck,
+    Zap,
+    Infinity
 } from 'lucide-react';
 
 export default function Index({ products, categories, filters }) {
@@ -25,6 +28,7 @@ export default function Index({ products, categories, filters }) {
     const [selectedCategory, setSelectedCategory] = useState(filters.category || '');
     const [selectedStatus, setSelectedStatus] = useState(filters.status || '');
     const [selectedStock, setSelectedStock] = useState(filters.stock || '');
+    const [selectedDeliveryType, setSelectedDeliveryType] = useState(filters.delivery_type || '');
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -32,7 +36,8 @@ export default function Index({ products, categories, filters }) {
             search: searchTerm,
             category: selectedCategory,
             status: selectedStatus,
-            stock: selectedStock
+            stock: selectedStock,
+            delivery_type: selectedDeliveryType
         }, {
             preserveState: true,
             replace: true
@@ -73,7 +78,18 @@ export default function Index({ products, categories, filters }) {
             );
         }
 
-        if (product.stock_quantity === 0) {
+        // For manual delivery products, always show as active if enabled
+        if (product.manual_delivery) {
+            return (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Active (Manual)
+                </span>
+            );
+        }
+
+        // For automatic delivery products, check stock
+        if (product.stock_quantity === 0 || (product.available_access_codes_count || 0) === 0) {
             return (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                     <AlertCircle className="w-3 h-3 mr-1" />
@@ -87,6 +103,48 @@ export default function Index({ products, categories, filters }) {
                 <CheckCircle className="w-3 h-3 mr-1" />
                 Active
             </span>
+        );
+    };
+
+    const getDeliveryTypeBadge = (product) => {
+        if (product.manual_delivery) {
+            return (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <Truck className="w-3 h-3 mr-1" />
+                    Manual
+                </span>
+            );
+        }
+        return (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                <Zap className="w-3 h-3 mr-1" />
+                Auto
+            </span>
+        );
+    };
+
+    const getStockDisplay = (product) => {
+        if (product.manual_delivery) {
+            return (
+                <span className="inline-flex items-center font-medium text-blue-600">
+                    <Infinity className="w-4 h-4 mr-1" />
+                    ∞
+                </span>
+            );
+        }
+
+        const available = product.available_access_codes_count || 0;
+        const total = product.access_codes_count || 0;
+
+        return (
+            <>
+                <span className={`font-medium ${available <= 10 ? 'text-red-600' : 'text-green-600'}`}>
+                    {available}
+                </span>
+                <span className="text-gray-500">
+                    /{total}
+                </span>
+            </>
         );
     };
 
@@ -120,7 +178,7 @@ export default function Index({ products, categories, filters }) {
                 {/* Filters */}
                 <div className="bg-white p-6 rounded-lg shadow">
                     <form onSubmit={handleSearch} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Search
@@ -185,6 +243,21 @@ export default function Index({ products, categories, filters }) {
                                 </select>
                             </div>
 
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Delivery
+                                </label>
+                                <select
+                                    value={selectedDeliveryType}
+                                    onChange={(e) => setSelectedDeliveryType(e.target.value)}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                >
+                                    <option value="">All Types</option>
+                                    <option value="automatic">Automatic</option>
+                                    <option value="manual">Manual</option>
+                                </select>
+                            </div>
+
                             <div className="flex items-end">
                                 <button
                                     type="submit"
@@ -220,6 +293,9 @@ export default function Index({ products, categories, filters }) {
                                         onClick={() => handleSort('price')}
                                     >
                                         Price
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Delivery
                                     </th>
                                     <th
                                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
@@ -281,13 +357,11 @@ export default function Index({ products, categories, filters }) {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             ${product.price}
                                         </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {getDeliveryTypeBadge(product)}
+                                        </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            <span className={`font-medium ${product.stock_quantity <= 10 ? 'text-red-600' : 'text-green-600'}`}>
-                                                {product.available_access_codes_count || 0}
-                                            </span>
-                                            <span className="text-gray-500">
-                                                /{product.access_codes_count || 0}
-                                            </span>
+                                            {getStockDisplay(product)}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {product.orders_count || 0}
@@ -381,8 +455,8 @@ export default function Index({ products, categories, filters }) {
                                                     key={index}
                                                     href={link.url || '#'}
                                                     className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${link.active
-                                                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                                                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                                                        ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                                                         } ${index === 0 ? 'rounded-l-md' : ''
                                                         } ${index === products.links.length - 1 ? 'rounded-r-md' : ''
                                                         }`}
@@ -403,9 +477,20 @@ export default function Index({ products, categories, filters }) {
                         <Package className="mx-auto h-12 w-12 text-gray-400" />
                         <h3 className="mt-2 text-sm font-medium text-gray-900">No products found</h3>
                         <p className="mt-1 text-sm text-gray-500">
-                            Get started by creating a new product.
+                            {Object.values(filters).some(filter => filter)
+                                ? 'Try adjusting your filters or search terms.'
+                                : 'Get started by creating a new product.'
+                            }
                         </p>
                         <div className="mt-6">
+                            {Object.values(filters).some(filter => filter) ? (
+                                <button
+                                    onClick={() => router.get(route('admin.products.index'))}
+                                    className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 mr-3"
+                                >
+                                    Clear Filters
+                                </button>
+                            ) : null}
                             <Link
                                 href={route('admin.products.create')}
                                 className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
