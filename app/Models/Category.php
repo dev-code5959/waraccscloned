@@ -108,6 +108,19 @@ class Category extends Model
         return $children;
     }
 
+    public function getAllAncestors()
+    {
+        $ancestors = collect();
+        $parent = $this->parent;
+
+        while ($parent) {
+            $ancestors->push($parent);
+            $parent = $parent->parent;
+        }
+
+        return $ancestors;
+    }
+
     public function getAllProductIds()
     {
         $productIds = $this->products()->pluck('id');

@@ -13,6 +13,7 @@ use App\Http\Controllers\Dashboard\TicketsController;
 use App\Http\Controllers\Dashboard\ReferralsController;
 use App\Http\Controllers\Dashboard\ProfileController as DashboardProfileController;
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\CategoryManagementController;
 use App\Http\Controllers\Admin\ProductManagementController;
 use App\Http\Controllers\Admin\OrderManagementController;
 use App\Http\Controllers\Admin\UserManagementController;
@@ -122,11 +123,21 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
     Route::post('/products/{product}/access-codes/bulk', [ProductManagementController::class, 'bulkUploadCodes'])->name('admin.products.codes.bulk');
     Route::post('/products/{product}/toggle-status', [ProductManagementController::class, 'toggleStatus'])->name('admin.products.toggle-status');
 
-    // // Category Management
-    Route::get('/categories', [ProductManagementController::class, 'categories'])->name('admin.categories.index');
-    Route::post('/categories', [ProductManagementController::class, 'storeCategory'])->name('admin.categories.store');
-    Route::put('/categories/{category}', [ProductManagementController::class, 'updateCategory'])->name('admin.categories.update');
-    Route::delete('/categories/{category}', [ProductManagementController::class, 'destroyCategory'])->name('admin.categories.destroy');
+    // Category Management
+    Route::get('/categories', [CategoryManagementController::class, 'index'])->name('admin.categories.index');
+    Route::get('/categories/create', [CategoryManagementController::class, 'create'])->name('admin.categories.create');
+    Route::post('/categories', [CategoryManagementController::class, 'store'])->name('admin.categories.store');
+    Route::get('/categories/{category}', [CategoryManagementController::class, 'show'])->name('admin.categories.show');
+    Route::get('/categories/{category}/edit', [CategoryManagementController::class, 'edit'])->name('admin.categories.edit');
+    Route::put('/categories/{category}', [CategoryManagementController::class, 'update'])->name('admin.categories.update');
+    Route::delete('/categories/{category}', [CategoryManagementController::class, 'destroy'])->name('admin.categories.destroy');
+    Route::post('/categories/{category}/toggle-status', [CategoryManagementController::class, 'toggleStatus'])->name('admin.categories.toggle-status');
+    Route::post('/categories/{category}/move-up', [CategoryManagementController::class, 'moveUp'])->name('admin.categories.move-up');
+    Route::post('/categories/{category}/move-down', [CategoryManagementController::class, 'moveDown'])->name('admin.categories.move-down');
+    Route::post('/categories/bulk-action', [CategoryManagementController::class, 'bulkAction'])->name('admin.categories.bulk-action');
+    Route::post('/categories/reorder', [CategoryManagementController::class, 'reorder'])->name('admin.categories.reorder');
+    Route::get('/categories/export', [CategoryManagementController::class, 'export'])->name('admin.categories.export');
+    Route::get('/categories/tree', [CategoryManagementController::class, 'getTree'])->name('admin.categories.tree');
 
     // // Order Management
     Route::get('/orders', [OrderManagementController::class, 'index'])->name('admin.orders.index');
@@ -154,40 +165,21 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
     Route::post('/transactions/{transaction}/reject', [TransactionManagementController::class, 'reject'])->name('admin.transactions.reject');
     Route::post('/transactions/create', [TransactionManagementController::class, 'create'])->name('admin.transactions.create');
 
-    // // Support Management
-    // Route::get('/support', [SupportManagementController::class, 'index'])->name('admin.support.index');
-    // Route::get('/support/{ticket}', [SupportManagementController::class, 'show'])->name('admin.support.show');
-    // Route::post('/support/{ticket}/assign', [SupportManagementController::class, 'assign'])->name('admin.support.assign');
-    // Route::post('/support/{ticket}/status', [SupportManagementController::class, 'updateStatus'])->name('admin.support.status');
-    // Route::post('/support/{ticket}/reply', [SupportManagementController::class, 'reply'])->name('admin.support.reply');
+    // Support Management
+    Route::get('/support', [SupportManagementController::class, 'index'])->name('admin.support.index');
+    Route::get('/support/{ticket}', [SupportManagementController::class, 'show'])->name('admin.support.show');
+    Route::post('/support/{ticket}/assign', [SupportManagementController::class, 'assign'])->name('admin.support.assign');
+    Route::post('/support/{ticket}/status', [SupportManagementController::class, 'updateStatus'])->name('admin.support.status');
+    Route::post('/support/{ticket}/reply', [SupportManagementController::class, 'reply'])->name('admin.support.reply');
 
-    // // Promo Code Management
-    // Route::get('/promo-codes', [PromoCodeController::class, 'index'])->name('admin.promo-codes.index');
-    // Route::get('/promo-codes/create', [PromoCodeController::class, 'create'])->name('admin.promo-codes.create');
-    // Route::post('/promo-codes', [PromoCodeController::class, 'store'])->name('admin.promo-codes.store');
-    // Route::get('/promo-codes/{promoCode}', [PromoCodeController::class, 'show'])->name('admin.promo-codes.show');
-    // Route::get('/promo-codes/{promoCode}/edit', [PromoCodeController::class, 'edit'])->name('admin.promo-codes.edit');
-    // Route::put('/promo-codes/{promoCode}', [PromoCodeController::class, 'update'])->name('admin.promo-codes.update');
-    // Route::delete('/promo-codes/{promoCode}', [PromoCodeController::class, 'destroy'])->name('admin.promo-codes.destroy');
-    // Route::post('/promo-codes/{promoCode}/toggle-status', [PromoCodeController::class, 'toggleStatus'])->name('admin.promo-codes.toggle-status');
-
-    // // CMS Management
-    // Route::get('/cms', [CmsController::class, 'index'])->name('admin.cms.index');
-    // Route::get('/cms/create', [CmsController::class, 'create'])->name('admin.cms.create');
-    // Route::post('/cms', [CmsController::class, 'store'])->name('admin.cms.store');
-    // Route::get('/cms/{cmsPage}', [CmsController::class, 'show'])->name('admin.cms.show');
-    // Route::get('/cms/{cmsPage}/edit', [CmsController::class, 'edit'])->name('admin.cms.edit');
-    // Route::put('/cms/{cmsPage}', [CmsController::class, 'update'])->name('admin.cms.update');
-    // Route::delete('/cms/{cmsPage}', [CmsController::class, 'destroy'])->name('admin.cms.destroy');
-    // Route::post('/cms/{cmsPage}/toggle-status', [CmsController::class, 'toggleStatus'])->name('admin.cms.toggle-status');
-
-    // // Reports & Analytics
-    // Route::get('/reports', [ReportsController::class, 'index'])->name('admin.reports.index');
-    // Route::get('/reports/sales', [ReportsController::class, 'sales'])->name('admin.reports.sales');
-    // Route::get('/reports/users', [ReportsController::class, 'users'])->name('admin.reports.users');
-    // Route::get('/reports/products', [ReportsController::class, 'products'])->name('admin.reports.products');
-    // Route::get('/reports/transactions', [ReportsController::class, 'transactions'])->name('admin.reports.transactions');
-    // Route::post('/reports/export', [ReportsController::class, 'export'])->name('admin.reports.export');
+    // Reports & Analytics
+    Route::get('/reports', [ReportsController::class, 'index'])->name('admin.reports.index');
+    Route::get('/reports/sales', [ReportsController::class, 'sales'])->name('admin.reports.sales');
+    Route::get('/reports/users', [ReportsController::class, 'users'])->name('admin.reports.users');
+    Route::get('/reports/products', [ReportsController::class, 'products'])->name('admin.reports.products');
+    Route::get('/reports/transactions', [ReportsController::class, 'transactions'])->name('admin.reports.transactions');
+    Route::get('/reports/support', [ReportsController::class, 'support'])->name('admin.reports.support');
+    Route::post('/reports/export', [ReportsController::class, 'export'])->name('admin.reports.export');
 });
 
 // API Routes for AJAX calls
