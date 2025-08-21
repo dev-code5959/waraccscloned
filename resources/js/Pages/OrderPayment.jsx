@@ -241,29 +241,6 @@ export default function OrderPayment({ order, user_balance, formatted_user_balan
                                 )}
                             </div>
 
-                            {/* Crypto Payment */}
-                            <div className="bg-white rounded-lg shadow-sm p-6">
-                                <h2 className="text-xl font-semibold text-gray-900 mb-4">Crypto Payment</h2>
-
-                                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-4">
-                                    <div className="flex items-start space-x-2">
-                                        <CreditCard className="h-5 w-5 text-blue-600 mt-0.5" />
-                                        <div className="text-blue-800 text-sm">
-                                            <p className="font-medium">Coming Soon</p>
-                                            <p>Crypto payment integration with NowPayments will be available soon.</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <button
-                                    disabled
-                                    className="w-full bg-gray-300 text-gray-500 py-3 px-4 rounded-lg font-semibold cursor-not-allowed flex items-center justify-center"
-                                >
-                                    <CreditCard className="h-5 w-5 mr-2" />
-                                    Pay with Crypto (Coming Soon)
-                                </button>
-                            </div>
-
                             {/* Order Actions */}
                             <div className="bg-white rounded-lg shadow-sm p-6">
                                 <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Actions</h2>

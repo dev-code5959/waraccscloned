@@ -36,6 +36,9 @@ class OrderController extends Controller
                 'formatted_price' => $product->formatted_price,
                 'thumbnail' => $product->thumbnail,
                 'delivery_info' => $product->delivery_info,
+                'manual_delivery' => $product->manual_delivery,
+                'is_in_stock' => $product->is_in_stock,
+                'available_stock' => $product->available_stock,
             ],
             'quantity' => $quantity,
             'subtotal' => $subtotal,
@@ -67,6 +70,9 @@ class OrderController extends Controller
         DB::beginTransaction();
 
         try {
+            // Determine initial status based on delivery type
+            $initialStatus = $product->manual_delivery ? 'pending' : 'pending';
+
             // Create order
             $order = Order::create([
                 'order_number' => Order::generateOrderNumber(),
@@ -75,7 +81,7 @@ class OrderController extends Controller
                 'quantity' => $quantity,
                 'unit_price' => $product->price,
                 'total_amount' => $product->price * $quantity,
-                'status' => 'pending',
+                'status' => $initialStatus,
                 'payment_status' => 'pending',
                 'net_amount' => $product->price * $quantity
             ]);
@@ -89,16 +95,21 @@ class OrderController extends Controller
                     $order->update([
                         'promo_code' => $promoCode->code,
                         'discount_amount' => $discount,
+                        'net_amount' => $order->total_amount - $discount,
                     ]);
                     $promoCode->incrementUsage();
                 }
             }
 
-            // Reserve access codes
-            $accessCodes = $product->reserveAccessCodes($quantity);
-            foreach ($accessCodes as $code) {
-                $code->update(['order_id' => $order->id]);
+            // Handle access codes based on delivery type
+            if (!$product->manual_delivery) {
+                // For automatic delivery, reserve access codes
+                $accessCodes = $product->reserveAccessCodes($quantity);
+                foreach ($accessCodes as $code) {
+                    $code->update(['order_id' => $order->id]);
+                }
             }
+            // For manual delivery, no access codes are reserved at this point
 
             DB::commit();
 
@@ -144,6 +155,7 @@ class OrderController extends Controller
                 'product' => [
                     'name' => $order->product->name,
                     'thumbnail' => $order->product->thumbnail,
+                    'manual_delivery' => $order->product->manual_delivery,
                 ],
                 'quantity' => $order->quantity,
                 'created_at' => $order->created_at,
@@ -179,13 +191,27 @@ class OrderController extends Controller
             // Mark order as paid
             $order->markAsPaid('balance', 'BALANCE_' . now()->timestamp);
 
-            // Deliver access codes
-            $accessCodes = $order->deliverAccessCodes();
+            // Handle delivery based on product type
+            if ($order->product->manual_delivery) {
+                // For manual delivery, mark as pending delivery
+                $order->update([
+                    'status' => 'pending_delivery',
+                    'notes' => 'Order paid - awaiting manual delivery by admin'
+                ]);
+
+                $successMessage = 'Payment successful! Your order is being processed and you will receive your digital products via email once ready.';
+            } else {
+                // For automatic delivery, deliver access codes immediately
+                $accessCodes = $order->deliverAccessCodes();
+                $order->update(['status' => 'completed']);
+
+                $successMessage = 'Payment successful! Your digital products have been delivered.';
+            }
 
             DB::commit();
 
             return redirect()->route('dashboard.orders.show', $order)
-                ->with('success', 'Payment successful! Your digital products have been delivered.');
+                ->with('success', $successMessage);
         } catch (\Exception $e) {
             DB::rollback();
 

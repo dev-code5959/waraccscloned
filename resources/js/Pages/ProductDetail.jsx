@@ -12,7 +12,12 @@ import {
     ArrowRight,
     Plus,
     Minus,
-    TrendingUp
+    TrendingUp,
+    Truck,
+    Zap,
+    Clock,
+    Infinity,
+    AlertCircle
 } from 'lucide-react';
 
 export default function ProductDetail({ product, relatedProducts, meta, auth, errors, flash }) {
@@ -26,9 +31,20 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
 
     const handleQuantityChange = (newQuantity) => {
         const minQty = product.min_purchase || 1;
-        const maxQty = product.max_purchase || product.available_stock;
+        let maxQty;
 
-        if (newQuantity >= minQty && newQuantity <= maxQty && newQuantity <= product.available_stock) {
+        if (product.manual_delivery) {
+            // For manual delivery, only limit by max_purchase setting
+            maxQty = product.max_purchase || 999;
+        } else {
+            // For automatic delivery, limit by both max_purchase and available stock
+            maxQty = Math.min(
+                product.max_purchase || 999,
+                product.available_stock
+            );
+        }
+
+        if (newQuantity >= minQty && newQuantity <= maxQty) {
             setQuantity(newQuantity);
             setData('quantity', newQuantity);
         }
@@ -55,6 +71,95 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
     };
 
     const subtotal = product.price * quantity;
+
+    const getDeliveryBadge = () => {
+        if (product.manual_delivery) {
+            return (
+                <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    <Truck className="w-4 h-4 mr-2" />
+                    Manual Delivery
+                </div>
+            );
+        }
+        return (
+            <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                <Zap className="w-4 h-4 mr-2" />
+                Instant Delivery
+            </div>
+        );
+    };
+
+    const getStockDisplay = () => {
+        if (product.manual_delivery) {
+            return (
+                <div className={`px-3 py-1 rounded-full text-sm font-medium ${product.is_in_stock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                    {product.is_in_stock ? (
+                        <span className="flex items-center">
+                            <Infinity className="w-4 h-4 mr-1" />
+                            Available
+                        </span>
+                    ) : (
+                        'Not Available'
+                    )}
+                </div>
+            );
+        }
+
+        return (
+            <div className={`px-3 py-1 rounded-full text-sm font-medium ${product.is_in_stock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                }`}>
+                {product.is_in_stock
+                    ? `${product.available_stock} available`
+                    : 'Out of stock'
+                }
+            </div>
+        );
+    };
+
+    const getMaxQuantityForInput = () => {
+        if (product.manual_delivery) {
+            return product.max_purchase || 999;
+        }
+        return Math.min(product.max_purchase || 999, product.available_stock);
+    };
+
+    const getDeliveryInfoMessage = () => {
+        if (product.manual_delivery) {
+            return (
+                <div className="bg-blue-50 rounded-lg p-4">
+                    <div className="flex items-start space-x-3">
+                        <Clock className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                            <h4 className="font-medium text-blue-900 mb-1">Manual Delivery Process</h4>
+                            <p className="text-blue-700 text-sm mb-2">
+                                This product requires manual processing. After payment, our team will prepare and deliver your digital products via email within 24-48 hours.
+                            </p>
+                            {product.delivery_info && (
+                                <p className="text-blue-700 text-sm">{product.delivery_info}</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        if (product.delivery_info) {
+            return (
+                <div className="bg-green-50 rounded-lg p-4">
+                    <div className="flex items-start space-x-3">
+                        <Zap className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                        <div>
+                            <h4 className="font-medium text-green-900 mb-1">Instant Delivery</h4>
+                            <p className="text-green-700 text-sm">{product.delivery_info}</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        return null;
+    };
 
     return (
         <AppLayout>
@@ -152,12 +257,15 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                     {/* Product Info */}
                     <div className="space-y-6">
                         <div>
-                            <div className="flex items-center space-x-2 text-sm text-blue-600 mb-2">
-                                <span>{product.category?.name}</span>
-                                <div className="flex items-center">
-                                    <TrendingUp className="h-4 w-4 mr-1" />
-                                    <span>{product.sold_count} sold</span>
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center space-x-3 text-sm">
+                                    <span className="text-blue-600">{product.category?.name}</span>
+                                    <div className="flex items-center text-gray-500">
+                                        <TrendingUp className="h-4 w-4 mr-1" />
+                                        <span>{product.sold_count} sold</span>
+                                    </div>
                                 </div>
+                                {getDeliveryBadge()}
                             </div>
                             <h1 className="text-3xl font-bold text-gray-900 mb-4">{product.name}</h1>
                             <p className="text-gray-600 mb-6">{product.description}</p>
@@ -185,15 +293,7 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                                     <div className="text-3xl font-bold text-gray-900">{product.formatted_price}</div>
                                     <div className="text-sm text-gray-500">per item</div>
                                 </div>
-                                <div className={`px-3 py-1 rounded-full text-sm font-medium ${product.is_in_stock
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-red-100 text-red-800'
-                                    }`}>
-                                    {product.is_in_stock
-                                        ? `${product.available_stock} available`
-                                        : 'Out of stock'
-                                    }
-                                </div>
+                                {getStockDisplay()}
                             </div>
 
                             {product.is_in_stock && (
@@ -217,15 +317,16 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                                                 value={quantity}
                                                 onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
                                                 min={product.min_purchase || 1}
-                                                max={Math.min(product.max_purchase || 999, product.available_stock)}
+                                                max={getMaxQuantityForInput()}
                                                 className="w-20 text-center border border-gray-300 rounded-md py-2"
                                             />
                                             <button
                                                 type="button"
                                                 onClick={() => handleQuantityChange(quantity + 1)}
                                                 disabled={
-                                                    quantity >= product.available_stock ||
-                                                    (product.max_purchase && quantity >= product.max_purchase)
+                                                    product.manual_delivery
+                                                        ? (product.max_purchase && quantity >= product.max_purchase)
+                                                        : (quantity >= product.available_stock || (product.max_purchase && quantity >= product.max_purchase))
                                                 }
                                                 className="p-2 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
@@ -235,6 +336,7 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                                         <div className="text-xs text-gray-500 mt-1">
                                             Min: {product.min_purchase || 1}
                                             {product.max_purchase && ` • Max: ${product.max_purchase}`}
+                                            {!product.manual_delivery && ` • Available: ${product.available_stock}`}
                                         </div>
                                     </div>
 
@@ -266,20 +368,23 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                                     )}
                                 </div>
                             )}
+
+                            {!product.is_in_stock && (
+                                <div className="text-center py-4">
+                                    <AlertCircle className="mx-auto h-8 w-8 text-red-500 mb-2" />
+                                    <p className="text-red-600 font-medium">Currently Unavailable</p>
+                                    <p className="text-gray-500 text-sm mt-1">
+                                        {product.manual_delivery
+                                            ? "This product is temporarily unavailable."
+                                            : "This product is out of stock."
+                                        }
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Delivery Info */}
-                        {product.delivery_info && (
-                            <div className="bg-blue-50 rounded-lg p-4">
-                                <div className="flex items-start space-x-3">
-                                    <Package className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                                    <div>
-                                        <h4 className="font-medium text-blue-900 mb-1">Delivery Information</h4>
-                                        <p className="text-blue-700 text-sm">{product.delivery_info}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                        {getDeliveryInfoMessage()}
 
                         {/* Security Badge */}
                         <div className="flex items-center space-x-4 text-sm text-gray-600">
@@ -288,8 +393,17 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                                 <span>Secure Payment</span>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <Package className="h-4 w-4 text-blue-600" />
-                                <span>Instant Delivery</span>
+                                {product.manual_delivery ? (
+                                    <>
+                                        <Truck className="h-4 w-4 text-blue-600" />
+                                        <span>Manual Delivery</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Package className="h-4 w-4 text-blue-600" />
+                                        <span>Instant Delivery</span>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -310,9 +424,14 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                                         />
                                     )}
                                     <div className="p-4">
-                                        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                                            {relatedProduct.name}
-                                        </h3>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <h3 className="font-semibold text-gray-900 line-clamp-2">
+                                                {relatedProduct.name}
+                                            </h3>
+                                            {relatedProduct.manual_delivery && (
+                                                <Truck className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                                            )}
+                                        </div>
 
                                         <div className="flex items-center justify-between mb-3">
                                             <span className="text-lg font-bold text-gray-900">
@@ -322,6 +441,25 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                                                 <TrendingUp className="h-4 w-4 mr-1" />
                                                 {relatedProduct.sold_count} sold
                                             </div>
+                                        </div>
+
+                                        <div className="mb-3">
+                                            {relatedProduct.manual_delivery ? (
+                                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    <Infinity className="w-3 h-3 mr-1" />
+                                                    Available
+                                                </span>
+                                            ) : (
+                                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${relatedProduct.is_in_stock
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : 'bg-red-100 text-red-800'
+                                                    }`}>
+                                                    {relatedProduct.is_in_stock
+                                                        ? `${relatedProduct.available_stock} available`
+                                                        : 'Out of stock'
+                                                    }
+                                                </span>
+                                            )}
                                         </div>
 
                                         <Link

@@ -146,6 +146,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(fu
     Route::post('/orders/{order}/cancel', [OrderManagementController::class, 'cancel'])->name('admin.orders.cancel');
     Route::post('/orders/{order}/refund', [OrderManagementController::class, 'refund'])->name('admin.orders.refund');
     Route::post('/orders/{order}/assign-codes', [OrderManagementController::class, 'assignCodes'])->name('admin.orders.assign-codes');
+    Route::post('/orders/{order}/upload-files', [OrderManagementController::class, 'uploadFiles'])->name('admin.orders.upload-files');
 
     // // User Management
     Route::get('/users', [UserManagementController::class, 'index'])->name('admin.users.index');

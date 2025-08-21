@@ -60,6 +60,8 @@ export default function OrdersIndex({ orders, filters, stats, auth }) {
                 return 'bg-green-100 text-green-800';
             case 'pending':
                 return 'bg-amber-100 text-amber-800';
+            case 'pending_delivery':
+                return 'bg-amber-100 text-amber-800';
             case 'cancelled':
                 return 'bg-red-100 text-red-800';
             default:
@@ -285,7 +287,7 @@ export default function OrdersIndex({ orders, filters, stats, auth }) {
                                                 </Link>
 
                                                 {/* Credentials Download - Only for completed orders */}
-                                                {order.status === 'completed' && order.payment_status === 'paid' && (
+                                                {order.status === 'completed' && order.payment_status === 'paid' && !order.product.manual_delivery && (
                                                     <Link
                                                         href={`/dashboard/orders/${order.id}/download`}
                                                         className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 transition-colors flex items-center"
@@ -304,7 +306,7 @@ export default function OrdersIndex({ orders, filters, stats, auth }) {
                                                         Pay Now
                                                     </Link>
                                                 )}
-                                            </div>  
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

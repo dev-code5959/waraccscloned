@@ -22,7 +22,12 @@ import {
     Copy,
     Settings,
     Plus,
-    Minus
+    Minus,
+    Upload,
+    Truck,
+    FileText,
+    Paperclip,
+    X
 } from 'lucide-react';
 
 export default function Show({
@@ -31,14 +36,17 @@ export default function Show({
     canProcess,
     canCancel,
     canRefund,
-    canAssignCodes
+    canAssignCodes,
+    canUploadFiles
 }) {
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [showRefundModal, setShowRefundModal] = useState(false);
     const [showAssignCodesModal, setShowAssignCodesModal] = useState(false);
+    const [showUploadModal, setShowUploadModal] = useState(false);
     const [showCredentials, setShowCredentials] = useState(false);
     const [selectedCodes, setSelectedCodes] = useState([]);
     const [availableCodes, setAvailableCodes] = useState([]);
+    const [selectedFiles, setSelectedFiles] = useState([]);
 
     const { data: cancelData, setData: setCancelData, post: postCancel, processing: cancelProcessing, errors: cancelErrors } = useForm({
         reason: ''
@@ -52,6 +60,11 @@ export default function Show({
 
     const { data: assignData, setData: setAssignData, post: postAssign, processing: assignProcessing } = useForm({
         access_code_ids: []
+    });
+
+    const { data: uploadData, setData: setUploadData, post: postUpload, processing: uploadProcessing, errors: uploadErrors } = useForm({
+        files: [],
+        delivery_notes: ''
     });
 
     const handleProcess = () => {
@@ -92,6 +105,42 @@ export default function Show({
         });
     };
 
+    const handleFileUpload = (e) => {
+        e.preventDefault();
+
+        const formData = new FormData();
+        selectedFiles.forEach((file, index) => {
+            formData.append(`files[${index}]`, file);
+        });
+        formData.append('delivery_notes', uploadData.delivery_notes);
+        formData.append('_method', 'POST');
+
+        router.post(route('admin.orders.upload-files', order.id), formData, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowUploadModal(false);
+                setSelectedFiles([]);
+                setUploadData({ files: [], delivery_notes: '' });
+            },
+            onError: (errors) => {
+                console.error('Upload failed:', errors);
+            }
+        });
+    };
+
+    const handleFileSelection = (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length + selectedFiles.length > 10) {
+            alert('Maximum 10 files allowed');
+            return;
+        }
+        setSelectedFiles(prev => [...prev, ...files]);
+    };
+
+    const removeFile = (indexToRemove) => {
+        setSelectedFiles(prev => prev.filter((_, index) => index !== indexToRemove));
+    };
+
     const loadAvailableCodes = async () => {
         try {
             const response = await fetch(`/api/products/${order.product.id}/available-codes`);
@@ -99,7 +148,6 @@ export default function Show({
             setAvailableCodes(data.codes || []);
         } catch (error) {
             console.error('Failed to load available codes:', error);
-            // For demo purposes, we'll use mock data
             setAvailableCodes([]);
         }
     };
@@ -116,6 +164,7 @@ export default function Show({
         const badges = {
             pending: { class: 'bg-yellow-100 text-yellow-800', icon: Clock, text: 'Pending' },
             processing: { class: 'bg-blue-100 text-blue-800', icon: RefreshCw, text: 'Processing' },
+            pending_delivery: { class: 'bg-blue-100 text-blue-800', icon: Truck, text: 'Pending Delivery' },
             completed: { class: 'bg-green-100 text-green-800', icon: CheckCircle, text: 'Completed' },
             cancelled: { class: 'bg-red-100 text-red-800', icon: XCircle, text: 'Cancelled' },
             refunded: { class: 'bg-gray-100 text-gray-800', icon: AlertCircle, text: 'Refunded' }
@@ -160,7 +209,6 @@ export default function Show({
 
     const copyToClipboard = (text) => {
         navigator.clipboard.writeText(text).then(() => {
-            // You could add a toast notification here
             console.log('Copied to clipboard:', text);
         });
     };
@@ -170,11 +218,20 @@ export default function Show({
             created: Plus,
             payment: CreditCard,
             processing: RefreshCw,
+            pending_delivery: Truck,
             completed: CheckCircle,
             cancelled: XCircle,
             transaction: DollarSign
         };
         return icons[event.type] || CheckCircle;
+    };
+
+    const formatFileSize = (bytes) => {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
     return (
@@ -200,6 +257,15 @@ export default function Show({
                         </div>
                     </div>
                     <div className="flex space-x-3">
+                        {canUploadFiles && (
+                            <button
+                                onClick={() => setShowUploadModal(true)}
+                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+                            >
+                                <Upload className="w-4 h-4 mr-2" />
+                                Upload & Deliver
+                            </button>
+                        )}
                         {canProcess && (
                             <button
                                 onClick={handleProcess}
@@ -229,6 +295,21 @@ export default function Show({
                         )}
                     </div>
                 </div>
+
+                {/* Manual Delivery Status Banner */}
+                {order.product.manual_delivery && order.status === 'pending_delivery' && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex items-center">
+                            <Truck className="w-5 h-5 text-blue-400 mr-3 flex-shrink-0" />
+                            <div>
+                                <h3 className="text-sm font-medium text-blue-800">Manual Delivery Required</h3>
+                                <p className="text-sm text-blue-700 mt-1">
+                                    This order is awaiting manual delivery. Upload the digital products to complete the order and notify the customer.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Order Summary Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -276,15 +357,19 @@ export default function Show({
                         <div className="p-5">
                             <div className="flex items-center">
                                 <div className="flex-shrink-0">
-                                    <CheckCircle className="h-6 w-6 text-purple-400" />
+                                    {order.product.manual_delivery ? (
+                                        <Truck className="h-6 w-6 text-purple-400" />
+                                    ) : (
+                                        <CheckCircle className="h-6 w-6 text-purple-400" />
+                                    )}
                                 </div>
                                 <div className="ml-5 w-0 flex-1">
                                     <dl>
                                         <dt className="text-sm font-medium text-gray-500 truncate">
-                                            Access Codes
+                                            Delivery Type
                                         </dt>
                                         <dd className="text-lg font-medium text-gray-900">
-                                            {order.access_codes_count || 0}
+                                            {order.product.manual_delivery ? 'Manual' : 'Auto'}
                                         </dd>
                                     </dl>
                                 </div>
@@ -477,7 +562,7 @@ export default function Show({
                                         {order.product.category?.name}
                                     </p>
                                     <p className="text-sm text-gray-500">
-                                        Stock: {order.product.available_stock || 0} available
+                                        Delivery: {order.product.manual_delivery ? 'Manual' : 'Automatic'}
                                     </p>
                                 </div>
                                 <div>
@@ -492,8 +577,8 @@ export default function Show({
                             </div>
                         </div>
 
-                        {/* Access Codes */}
-                        {order.access_codes && order.access_codes.length > 0 && (
+                        {/* Access Codes - Only show for automatic delivery OR completed manual delivery orders */}
+                        {(!order.product.manual_delivery || (order.product.manual_delivery && order.status === 'completed')) && order.access_codes && order.access_codes.length > 0 && (
                             <div className="bg-white shadow rounded-lg p-6">
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="text-lg font-medium text-gray-900">Access Codes</h3>
@@ -530,6 +615,9 @@ export default function Show({
                                                 </th>
                                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Delivered
+                                                </th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Actions
                                                 </th>
                                             </tr>
                                         </thead>
@@ -573,11 +661,10 @@ export default function Show({
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                            code.status === 'sold' ? 'bg-green-100 text-green-800' :
-                                                            code.status === 'reserved' ? 'bg-yellow-100 text-yellow-800' :
-                                                            'bg-gray-100 text-gray-800'
-                                                        }`}>
+                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${code.status === 'sold' ? 'bg-green-100 text-green-800' :
+                                                                code.status === 'reserved' ? 'bg-yellow-100 text-yellow-800' :
+                                                                    'bg-gray-100 text-gray-800'
+                                                            }`}>
                                                             {code.status}
                                                         </span>
                                                     </td>
@@ -587,11 +674,69 @@ export default function Show({
                                                             'Not delivered'
                                                         }
                                                     </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                        <button
+                                                            onClick={() => copyToClipboard(`${code.email || code.username}:${code.password || ''}`)}
+                                                            className="text-blue-600 hover:text-blue-900"
+                                                        >
+                                                            <Copy className="w-4 h-4" />
+                                                        </button>
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>
                                     </table>
                                 </div>
+                            </div>
+                        )}
+
+                        {/* Manual Delivery Files Section */}
+                        {order.product.manual_delivery && order.status === 'completed' && order.delivery_files && order.delivery_files.length > 0 && (
+                            <div className="bg-white shadow rounded-lg p-6">
+                                <h3 className="text-lg font-medium text-gray-900 mb-4">Delivered Files</h3>
+
+                                <div className="space-y-3">
+                                    {order.delivery_files.map((file, index) => (
+                                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                            <div className="flex items-center space-x-3">
+                                                <FileText className="w-5 h-5 text-gray-400" />
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                                                    <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => window.open(file.download_url, '_blank')}
+                                                className="inline-flex items-center px-3 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50"
+                                            >
+                                                <Download className="w-3 h-3 mr-1" />
+                                                Download
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Assign Additional Codes */}
+                        {canAssignCodes && (
+                            <div className="bg-white shadow rounded-lg p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-lg font-medium text-gray-900">Assign Additional Access Codes</h3>
+                                    <button
+                                        onClick={() => {
+                                            setShowAssignCodesModal(true);
+                                            loadAvailableCodes();
+                                        }}
+                                        className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                                    >
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Assign Codes
+                                    </button>
+                                </div>
+                                <p className="text-sm text-gray-600">
+                                    This order needs {order.quantity - (order.access_codes?.length || 0)} more access codes.
+                                </p>
                             </div>
                         )}
                     </div>
@@ -617,13 +762,12 @@ export default function Show({
                                                     ) : null}
                                                     <div className="relative flex space-x-3">
                                                         <div>
-                                                            <span className={`h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${
-                                                                event.color === 'green' ? 'bg-green-500' :
-                                                                event.color === 'blue' ? 'bg-blue-500' :
-                                                                event.color === 'yellow' ? 'bg-yellow-500' :
-                                                                event.color === 'red' ? 'bg-red-500' :
-                                                                'bg-gray-500'
-                                                            }`}>
+                                                            <span className={`h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white ${event.color === 'green' ? 'bg-green-500' :
+                                                                    event.color === 'blue' ? 'bg-blue-500' :
+                                                                        event.color === 'yellow' ? 'bg-yellow-500' :
+                                                                            event.color === 'red' ? 'bg-red-500' :
+                                                                                'bg-gray-500'
+                                                                }`}>
                                                                 <IconComponent className="h-5 w-5 text-white" />
                                                             </span>
                                                         </div>
@@ -668,9 +812,8 @@ export default function Show({
                                                 </p>
                                             </div>
                                             <div className="text-right">
-                                                <p className={`text-sm font-medium ${
-                                                    transaction.type === 'refund' ? 'text-red-600' : 'text-green-600'
-                                                }`}>
+                                                <p className={`text-sm font-medium ${transaction.type === 'refund' ? 'text-red-600' : 'text-green-600'
+                                                    }`}>
                                                     {transaction.type === 'refund' ? '-' : '+'}
                                                     {formatCurrency(transaction.amount)}
                                                 </p>
@@ -685,6 +828,153 @@ export default function Show({
                         )}
                     </div>
                 </div>
+
+                {/* Upload Files Modal */}
+                {showUploadModal && (
+                    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+                        <div className="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+                            <div className="mt-3">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-lg font-medium text-gray-900">Upload & Deliver Files</h3>
+                                    <button
+                                        onClick={() => setShowUploadModal(false)}
+                                        className="text-gray-400 hover:text-gray-600"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                                    <div className="flex items-center">
+                                        <Truck className="w-5 h-5 text-blue-400 mr-3 flex-shrink-0" />
+                                        <div>
+                                            <h4 className="text-sm font-medium text-blue-800">Manual Delivery Process</h4>
+                                            <p className="text-sm text-blue-700 mt-1">
+                                                Upload the digital files for this order. Files will be delivered to the customer via email and the order will be marked as completed.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mb-6">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Select Files (Max 10 files, 10MB each)
+                                    </label>
+                                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                                        <input
+                                            type="file"
+                                            multiple
+                                            onChange={handleFileSelection}
+                                            accept=".txt,.pdf,.zip,.rar,.doc,.docx,.jpg,.jpeg,.png"
+                                            className="hidden"
+                                            id="file-upload"
+                                        />
+                                        <label htmlFor="file-upload" className="cursor-pointer">
+                                            <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                                            <span className="mt-2 block text-sm font-medium text-gray-900">
+                                                Click to upload files
+                                            </span>
+                                            <span className="mt-1 block text-sm text-gray-500">
+                                                or drag and drop
+                                            </span>
+                                            <span className="mt-1 block text-xs text-gray-500">
+                                                TXT, PDF, ZIP, RAR, DOC, DOCX, JPG, PNG up to 10MB each
+                                            </span>
+                                        </label>
+                                    </div>
+                                    {uploadErrors.files && (
+                                        <p className="mt-1 text-sm text-red-600">{uploadErrors.files}</p>
+                                    )}
+                                </div>
+
+                                {/* Selected Files Preview */}
+                                {selectedFiles.length > 0 && (
+                                    <div className="mb-6">
+                                        <h4 className="text-sm font-medium text-gray-900 mb-3">Selected Files ({selectedFiles.length}/10)</h4>
+                                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                                            {selectedFiles.map((file, index) => (
+                                                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                                    <div className="flex items-center space-x-3">
+                                                        <Paperclip className="w-4 h-4 text-gray-400" />
+                                                        <div>
+                                                            <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                                                            <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => removeFile(index)}
+                                                        className="text-red-400 hover:text-red-600"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="mb-6">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Delivery Notes (Optional)
+                                    </label>
+                                    <textarea
+                                        value={uploadData.delivery_notes}
+                                        onChange={(e) => setUploadData(prev => ({ ...prev, delivery_notes: e.target.value }))}
+                                        rows={4}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="Add any delivery instructions or notes for the customer..."
+                                    />
+                                    {uploadErrors.delivery_notes && (
+                                        <p className="mt-1 text-sm text-red-600">{uploadErrors.delivery_notes}</p>
+                                    )}
+                                </div>
+
+                                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                                    <div className="flex items-center">
+                                        <AlertCircle className="w-5 h-5 text-yellow-400 mr-3 flex-shrink-0" />
+                                        <div>
+                                            <h4 className="text-sm font-medium text-yellow-800">Important</h4>
+                                            <p className="text-sm text-yellow-700 mt-1">
+                                                Once files are uploaded and delivered, the order will be automatically marked as completed and the customer will receive an email with the files attached.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end space-x-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowUploadModal(false);
+                                            setSelectedFiles([]);
+                                            setUploadData({ files: [], delivery_notes: '' });
+                                        }}
+                                        className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleFileUpload}
+                                        disabled={uploadProcessing || selectedFiles.length === 0}
+                                        className="px-4 py-2 bg-green-600 text-white rounded-md text-sm font-medium hover:bg-green-700 disabled:opacity-50 flex items-center"
+                                    >
+                                        {uploadProcessing ? (
+                                            <>
+                                                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                                                Uploading...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Upload className="w-4 h-4 mr-2" />
+                                                Upload & Deliver ({selectedFiles.length} files)
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Cancel Modal */}
                 {showCancelModal && (
@@ -838,7 +1128,7 @@ export default function Show({
                                 <form onSubmit={handleAssignCodes}>
                                     <div className="mb-4">
                                         <p className="text-sm text-gray-600 mb-4">
-                                            Select {order.quantity - (order.access_codes_count || 0)} access codes to assign to this order.
+                                            Select {order.quantity - (order.access_codes?.length || 0)} access codes to assign to this order.
                                         </p>
 
                                         {availableCodes.length > 0 ? (
@@ -852,7 +1142,7 @@ export default function Show({
                                                             type="checkbox"
                                                             checked={selectedCodes.includes(code.id)}
                                                             onChange={() => toggleCodeSelection(code.id)}
-                                                            disabled={selectedCodes.length >= (order.quantity - (order.access_codes_count || 0)) && !selectedCodes.includes(code.id)}
+                                                            disabled={selectedCodes.length >= (order.quantity - (order.access_codes?.length || 0)) && !selectedCodes.includes(code.id)}
                                                             className="mr-3"
                                                         />
                                                         <div className="flex-1">
@@ -879,7 +1169,7 @@ export default function Show({
                                         )}
 
                                         <p className="text-sm text-gray-500 mt-2">
-                                            Selected: {selectedCodes.length} / {order.quantity - (order.access_codes_count || 0)}
+                                            Selected: {selectedCodes.length} / {order.quantity - (order.access_codes?.length || 0)}
                                         </p>
                                     </div>
 

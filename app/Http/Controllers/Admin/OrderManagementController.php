@@ -9,8 +9,11 @@ use App\Models\User;
 use App\Models\Product;
 use App\Models\AccessCode;
 use App\Models\Transaction;
+use App\Mail\ManualDeliveryComplete;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Carbon\Carbon;
 
@@ -46,6 +49,18 @@ class OrderManagementController extends Controller
             $query->where('payment_status', $request->payment_status);
         }
 
+        // Delivery type filter
+        if ($request->filled('delivery_type')) {
+            $deliveryType = $request->delivery_type;
+            $query->whereHas('product', function ($productQuery) use ($deliveryType) {
+                if ($deliveryType === 'manual') {
+                    $productQuery->where('manual_delivery', true);
+                } elseif ($deliveryType === 'automatic') {
+                    $productQuery->where('manual_delivery', false);
+                }
+            });
+        }
+
         // Date range filter
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
@@ -76,6 +91,10 @@ class OrderManagementController extends Controller
             'processing_orders' => Order::where('status', 'processing')->count(),
             'completed_orders' => Order::where('status', 'completed')->count(),
             'cancelled_orders' => Order::where('status', 'cancelled')->count(),
+            'pending_delivery_orders' => Order::where('status', 'pending_delivery')->count(),
+            'manual_delivery_orders' => Order::whereHas('product', function ($q) {
+                $q->where('manual_delivery', true);
+            })->count(),
             'total_revenue' => Order::where('status', 'completed')->sum('total_amount'),
             'pending_payments' => Order::where('payment_status', 'pending')->count(),
         ];
@@ -87,6 +106,7 @@ class OrderManagementController extends Controller
                 'search',
                 'status',
                 'payment_status',
+                'delivery_type',
                 'date_from',
                 'date_to',
                 'amount_min',
@@ -120,6 +140,7 @@ class OrderManagementController extends Controller
             'canCancel' => $this->canCancelOrder($order),
             'canRefund' => $this->canRefundOrder($order),
             'canAssignCodes' => $this->canAssignCodes($order),
+            'canUploadFiles' => $this->canUploadFiles($order),
         ]);
     }
 
@@ -132,10 +153,16 @@ class OrderManagementController extends Controller
         DB::beginTransaction();
         try {
             if ($order->status === 'pending') {
-                $order->markAsProcessing();
+                if ($order->product->manual_delivery) {
+                    // For manual delivery, move to pending_delivery after payment
+                    $order->update(['status' => 'pending_delivery']);
+                } else {
+                    // For automatic delivery, move to processing
+                    $order->markAsProcessing();
+                }
             }
 
-            if ($order->status === 'processing' && $order->payment_status === 'paid') {
+            if ($order->status === 'processing' && $order->payment_status === 'paid' && !$order->product->manual_delivery) {
                 $deliveredCodes = $order->deliverAccessCodes();
 
                 // Create transaction record for the sale
@@ -155,10 +182,97 @@ class OrderManagementController extends Controller
             }
 
             DB::commit();
-            return back()->with('success', 'Order moved to processing status.');
+            return back()->with('success', 'Order status updated successfully.');
         } catch (\Exception $e) {
             DB::rollback();
             return back()->withErrors(['error' => 'Failed to process order: ' . $e->getMessage()]);
+        }
+    }
+
+    public function uploadFiles(Request $request, Order $order)
+    {
+        $request->validate([
+            'files' => 'required|array|min:1|max:10',
+            'files.*' => 'required|file|max:10240|mimes:txt,pdf,zip,rar,doc,docx,jpg,jpeg,png',
+            'delivery_notes' => 'nullable|string|max:1000',
+        ]);
+
+        if (!$this->canUploadFiles($order)) {
+            return back()->withErrors(['error' => 'Cannot upload files for this order.']);
+        }
+
+        DB::beginTransaction();
+        try {
+            $uploadedFiles = [];
+            $deliveryPath = "manual-deliveries/{$order->order_number}";
+
+            // Create directory if it doesn't exist
+            Storage::makeDirectory($deliveryPath);
+
+            // Process each uploaded file
+            foreach ($request->file('files') as $file) {
+                $originalName = $file->getClientOriginalName();
+                $filename = time() . '_' . $originalName;
+                $path = $file->storeAs($deliveryPath, $filename);
+
+                $uploadedFiles[] = [
+                    'name' => $originalName,
+                    'path' => Storage::path($path),
+                    'mime_type' => $file->getMimeType(),
+                    'size' => $file->getSize(),
+                ];
+            }
+
+            // Update order status and notes
+            $notes = $order->notes ?: '';
+            if ($request->delivery_notes) {
+                $notes .= "\n\nDelivery Notes: " . $request->delivery_notes;
+            }
+            $notes .= "\n\nManual delivery completed on " . now()->format('Y-m-d H:i:s');
+            $notes .= "\nFiles delivered: " . count($uploadedFiles) . " files";
+
+            $order->update([
+                'status' => 'completed',
+                'completed_at' => now(),
+                'notes' => $notes,
+            ]);
+
+            // Update product sold count
+            $order->product->incrementSoldCount($order->quantity);
+
+            // Create transaction record
+            Transaction::create([
+                'transaction_id' => 'TXN-' . strtoupper(uniqid()),
+                'user_id' => $order->user_id,
+                'order_id' => $order->id,
+                'type' => 'purchase',
+                'amount' => $order->total_amount,
+                'net_amount' => $order->net_amount,
+                'status' => 'completed',
+                'description' => "Manual delivery of {$order->quantity} x {$order->product->name}",
+            ]);
+
+            // Send email with attachments
+            Mail::to($order->user->email)->send(new ManualDeliveryComplete($order, $uploadedFiles));
+
+            // Clean up files after email is sent (optional - depends on your retention policy)
+            // You might want to keep files for a certain period for support purposes
+
+            DB::commit();
+
+            return back()->with('success', 'Files uploaded successfully and delivered to customer via email. Order marked as completed.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            // Clean up uploaded files on error
+            foreach ($uploadedFiles as $file) {
+                if (file_exists($file['path'])) {
+                    unlink($file['path']);
+                }
+            }
+
+            return back()->withErrors(['error' => 'Failed to upload files: ' . $e->getMessage()]);
         }
     }
 
@@ -241,13 +355,15 @@ class OrderManagementController extends Controller
                     'notes' => ($order->notes ? $order->notes . "\n" : '') . "Full refund: {$request->reason}"
                 ]);
 
-                // Release access codes back to available
-                $order->accessCodes()->update([
-                    'status' => 'available',
-                    'order_id' => null,
-                    'sold_at' => null,
-                    'delivered_at' => null
-                ]);
+                // Release access codes back to available (only for automatic delivery)
+                if (!$order->product->manual_delivery) {
+                    $order->accessCodes()->update([
+                        'status' => 'available',
+                        'order_id' => null,
+                        'sold_at' => null,
+                        'delivered_at' => null
+                    ]);
+                }
             } else {
                 $order->update([
                     'notes' => ($order->notes ? $order->notes . "\n" : '') . "Partial refund of \${$refundAmount}: {$request->reason}"
@@ -307,27 +423,39 @@ class OrderManagementController extends Controller
 
     private function canProcessOrder(Order $order): bool
     {
+        if ($order->product->manual_delivery) {
+            return $order->status === 'pending' && $order->payment_status === 'paid';
+        }
+
         return in_array($order->status, ['pending', 'processing']) &&
             $order->payment_status === 'paid';
     }
 
     private function canCancelOrder(Order $order): bool
     {
-        return in_array($order->status, ['pending', 'processing']) &&
+        return in_array($order->status, ['pending', 'processing', 'pending_delivery']) &&
             $order->status !== 'completed';
     }
 
     private function canRefundOrder(Order $order): bool
     {
         return $order->payment_status === 'paid' &&
-            in_array($order->status, ['completed', 'processing']);
+            in_array($order->status, ['completed', 'processing', 'pending_delivery']);
     }
 
     private function canAssignCodes(Order $order): bool
     {
-        return $order->status === 'processing' &&
+        return !$order->product->manual_delivery &&
+            $order->status === 'processing' &&
             $order->payment_status === 'paid' &&
             $order->accessCodes()->count() < $order->quantity;
+    }
+
+    private function canUploadFiles(Order $order): bool
+    {
+        return $order->product->manual_delivery &&
+            $order->status === 'pending_delivery' &&
+            $order->payment_status === 'paid';
     }
 
     private function getOrderTimeline(Order $order): array
@@ -368,11 +496,23 @@ class OrderManagementController extends Controller
             ];
         }
 
+        if ($order->status === 'pending_delivery') {
+            $timeline[] = [
+                'type' => 'pending_delivery',
+                'title' => 'Pending Manual Delivery',
+                'description' => 'Order awaiting manual delivery by admin',
+                'timestamp' => $order->updated_at,
+                'icon' => 'truck',
+                'color' => 'blue'
+            ];
+        }
+
         if ($order->completed_at) {
+            $deliveryType = $order->product->manual_delivery ? 'Manual delivery completed' : 'Access codes delivered and order completed';
             $timeline[] = [
                 'type' => 'completed',
                 'title' => 'Order Completed',
-                'description' => 'Access codes delivered and order completed',
+                'description' => $deliveryType,
                 'timestamp' => $order->completed_at,
                 'icon' => 'check',
                 'color' => 'green'

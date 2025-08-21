@@ -161,6 +161,11 @@ class Order extends Model
         return $this->status === 'pending';
     }
 
+    public function getIsPendingDeliveryAttribute()
+    {
+        return $this->status === 'pending_delivery';
+    }
+
     public function getIsProcessingAttribute()
     {
         return $this->status === 'processing';
@@ -190,6 +195,7 @@ class Order extends Model
     {
         return match ($this->status) {
             'pending' => 'bg-yellow-100 text-yellow-800',
+            'pending_delivery' => 'bg-yellow-100 text-yellow-800',
             'processing' => 'bg-blue-100 text-blue-800',
             'completed' => 'bg-green-100 text-green-800',
             'cancelled' => 'bg-red-100 text-red-800',

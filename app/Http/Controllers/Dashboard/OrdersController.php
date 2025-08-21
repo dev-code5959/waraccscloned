@@ -41,6 +41,17 @@ class OrdersController extends Controller
             $query->where('payment_status', $request->get('payment_status'));
         }
 
+        if ($request->filled('delivery_type')) {
+            $deliveryType = $request->get('delivery_type');
+            $query->whereHas('product', function ($productQuery) use ($deliveryType) {
+                if ($deliveryType === 'manual') {
+                    $productQuery->where('manual_delivery', true);
+                } elseif ($deliveryType === 'automatic') {
+                    $productQuery->where('manual_delivery', false);
+                }
+            });
+        }
+
         // Get paginated results
         $orders = $query->latest()->paginate(15)->withQueryString();
 
@@ -54,6 +65,7 @@ class OrdersController extends Controller
                     'name' => $order->product->name,
                     'slug' => $order->product->slug,
                     'thumbnail' => $order->product->thumbnail,
+                    'manual_delivery' => $order->product->manual_delivery,
                 ],
                 'quantity' => $order->quantity,
                 'unit_price' => $order->unit_price,
@@ -73,8 +85,9 @@ class OrdersController extends Controller
                 'created_at_human' => $order->created_at->diffForHumans(),
                 'completed_at' => $order->completed_at,
                 'completed_at_human' => $order->completed_at?->diffForHumans(),
-                'can_be_cancelled' => $order->can_be_cancelled ?? ($order->status === 'pending' && $order->payment_status !== 'paid'),
+                'can_be_cancelled' => $order->can_be_cancelled ?? $this->canBeCancelled($order),
                 'is_completed' => $order->is_completed ?? ($order->status === 'completed'),
+                'is_pending_delivery' => $order->status === 'pending_delivery',
             ];
         });
 
@@ -82,7 +95,10 @@ class OrdersController extends Controller
         $stats = [
             'total_orders' => $user->orders()->count(),
             'completed_orders' => $user->orders()->where('status', 'completed')->count(),
-            'pending_orders' => $user->orders()->where('status', 'pending')->count(),
+            'pending_orders' => $user->orders()->whereIn('status', ['pending', 'pending_delivery', 'processing'])->count(),
+            'manual_delivery_orders' => $user->orders()->whereHas('product', function ($q) {
+                $q->where('manual_delivery', true);
+            })->count(),
             'total_spent' => number_format($user->orders()->where('payment_status', 'paid')->sum('net_amount'), 2)
         ];
 
@@ -92,6 +108,7 @@ class OrdersController extends Controller
                 'search' => $request->get('search', ''),
                 'status' => $request->get('status', ''),
                 'payment_status' => $request->get('payment_status', ''),
+                'delivery_type' => $request->get('delivery_type', ''),
             ],
             'stats' => $stats,
         ]);
@@ -108,18 +125,24 @@ class OrdersController extends Controller
 
         // Get access codes for this order
         $accessCodes = [];
+        $hasCredentials = false;
+
         if ($order->status === 'completed' && $order->payment_status === 'paid') {
-            $accessCodes = $order->accessCodes()->where('status', 'delivered')->get()->map(function ($code) {
-                return [
-                    'id' => $code->id,
-                    'email' => $code->email,
-                    'username' => $code->username,
-                    'password' => $code->password,
-                    'additional_info' => $code->additional_info,
-                    'delivered_at' => $code->delivered_at,
-                    'status' => $code->status,
-                ];
-            });
+            if (!$order->product->manual_delivery) {
+                // Automatic delivery - show access codes
+                $accessCodes = $order->accessCodes()->where('status', 'delivered')->get()->map(function ($code) {
+                    return [
+                        'id' => $code->id,
+                        'email' => $code->email,
+                        'username' => $code->username,
+                        'password' => $code->password,
+                        'additional_info' => $code->additional_info,
+                        'delivered_at' => $code->delivered_at,
+                        'status' => $code->status,
+                    ];
+                });
+                $hasCredentials = $accessCodes->count() > 0;
+            }
         }
 
         $orderData = [
@@ -131,6 +154,7 @@ class OrdersController extends Controller
                 'slug' => $order->product->slug,
                 'thumbnail' => $order->product->thumbnail,
                 'delivery_info' => $order->product->delivery_info,
+                'manual_delivery' => $order->product->manual_delivery,
             ],
             'quantity' => $order->quantity,
             'unit_price' => $order->unit_price,
@@ -156,8 +180,10 @@ class OrdersController extends Controller
             'paid_at' => $order->paid_at,
             'created_at_human' => $order->created_at->diffForHumans(),
             'completed_at_human' => $order->completed_at?->diffForHumans(),
-            'can_be_cancelled' => $order->can_be_cancelled ?? ($order->status === 'pending' && $order->payment_status !== 'paid'),
+            'can_be_cancelled' => $order->can_be_cancelled ?? $this->canBeCancelled($order),
             'is_completed' => $order->is_completed ?? ($order->status === 'completed'),
+            'is_pending_delivery' => $order->status === 'pending_delivery',
+            'has_credentials' => $hasCredentials,
         ];
 
         return Inertia::render('Dashboard/Orders/Show', [
@@ -175,6 +201,11 @@ class OrdersController extends Controller
 
         if ($order->status !== 'completed' || $order->payment_status !== 'paid') {
             return redirect()->back()->with('error', 'Order must be completed and paid to download credentials.');
+        }
+
+        // Manual delivery products should not have downloadable credentials yet
+        if ($order->product->manual_delivery) {
+            return redirect()->back()->with('error', 'Manual delivery orders do not have downloadable credentials. You will receive your products via email.');
         }
 
         $accessCodes = $order->accessCodes()
@@ -265,7 +296,7 @@ class OrdersController extends Controller
         }
 
         // Check if order can be cancelled
-        $canBeCancelled = $order->can_be_cancelled ?? ($order->status === 'pending' && $order->payment_status !== 'paid');
+        $canBeCancelled = $this->canBeCancelled($order);
 
         if (!$canBeCancelled) {
             return redirect()->back()->with('error', 'This order cannot be cancelled.');
@@ -278,8 +309,8 @@ class OrdersController extends Controller
             'cancellation_reason' => $request->get('reason', 'Cancelled by customer')
         ]);
 
-        // Release reserved access codes if they exist
-        if ($order->accessCodes()->exists()) {
+        // Release reserved access codes if they exist (only for automatic delivery)
+        if (!$order->product->manual_delivery && $order->accessCodes()->exists()) {
             $order->accessCodes()->update([
                 'order_id' => null,
                 'status' => 'available',
@@ -292,6 +323,31 @@ class OrdersController extends Controller
     }
 
     /**
+     * Helper method to determine if an order can be cancelled
+     */
+    private function canBeCancelled($order)
+    {
+        // Cannot cancel if already completed, cancelled, or refunded
+        if (in_array($order->status, ['completed', 'cancelled', 'refunded'])) {
+            return false;
+        }
+
+        // Cannot cancel if payment is already processed
+        if ($order->payment_status === 'paid') {
+            // For manual delivery, might allow cancellation even after payment
+            // depending on business rules - for now, we'll allow it if not yet delivered
+            if ($order->product->manual_delivery) {
+                return $order->status !== 'completed';
+            }
+
+            // For automatic delivery, cannot cancel once paid (codes likely delivered)
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Helper method to get status badge class
      */
     private function getStatusBadgeClass($status)
@@ -301,10 +357,14 @@ class OrdersController extends Controller
                 return 'bg-green-100 text-green-800';
             case 'pending':
                 return 'bg-amber-100 text-amber-800';
+            case 'pending_delivery':
+                return 'bg-blue-100 text-blue-800';
             case 'processing':
                 return 'bg-blue-100 text-blue-800';
             case 'cancelled':
                 return 'bg-red-100 text-red-800';
+            case 'refunded':
+                return 'bg-gray-100 text-gray-800';
             default:
                 return 'bg-gray-100 text-gray-800';
         }
@@ -322,6 +382,8 @@ class OrdersController extends Controller
                 return 'bg-amber-100 text-amber-800';
             case 'failed':
                 return 'bg-red-100 text-red-800';
+            case 'refunded':
+                return 'bg-gray-100 text-gray-800';
             default:
                 return 'bg-gray-100 text-gray-800';
         }
@@ -353,6 +415,11 @@ class OrdersController extends Controller
     {
         $invoiceDate = $order->created_at->format('M d, Y');
         $dueDate = $order->paid_at ? $order->paid_at->format('M d, Y') : 'Pending';
+
+        // Add delivery type information
+        $deliveryTypeInfo = $order->product->manual_delivery
+            ? '<p><strong>Delivery Type:</strong> Manual Delivery</p>'
+            : '<p><strong>Delivery Type:</strong> Instant Delivery</p>';
 
         return '<!DOCTYPE html>
                 <html lang="en">
@@ -485,6 +552,27 @@ class OrdersController extends Controller
                             font-size: 14px;
                         }
 
+                        .delivery-badge {
+                            display: inline-block;
+                            padding: 4px 8px;
+                            border-radius: 12px;
+                            font-size: 11px;
+                            font-weight: 600;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                            margin-left: 8px;
+                        }
+
+                        .delivery-manual {
+                            background: #dbeafe;
+                            color: #1e40af;
+                        }
+
+                        .delivery-instant {
+                            background: #dcfce7;
+                            color: #166534;
+                        }
+
                         .items-table {
                             width: 100%;
                             border-collapse: collapse;
@@ -571,6 +659,11 @@ class OrdersController extends Controller
                             color: #92400e;
                         }
 
+                        .status-pending-delivery {
+                            background: #dbeafe;
+                            color: #1e40af;
+                        }
+
                         .status-cancelled {
                             background: #fee2e2;
                             color: #991b1b;
@@ -627,7 +720,7 @@ class OrdersController extends Controller
                             <h2>INVOICE</h2>
                             <p><strong>Invoice #:</strong> ' . $order->order_number . '</p>
                             <p><strong>Date:</strong> ' . $invoiceDate . '</p>
-                            <p><strong>Status:</strong> <span class="status-badge status-' . $order->payment_status . '">' . ucfirst($order->payment_status) . '</span></p>
+                            <p><strong>Status:</strong> <span class="status-badge status-' . str_replace('_', '-', $order->payment_status) . '">' . ucfirst(str_replace('_', ' ', $order->payment_status)) . '</span></p>
                         </div>
                     </div>
 
@@ -645,6 +738,7 @@ class OrdersController extends Controller
                             <p><strong>Payment Date:</strong> ' . $dueDate . '</p>
                             ' . ($order->payment_reference ? '<p><strong>Reference:</strong> ' . htmlspecialchars($order->payment_reference) . '</p>' : '') . '
                             <p><strong>Order Date:</strong> ' . $invoiceDate . '</p>
+                            ' . $deliveryTypeInfo . '
                         </div>
                     </div>
 
@@ -660,12 +754,13 @@ class OrdersController extends Controller
                         <tbody>
                             <tr>
                                 <td>
-                                    <strong>' . htmlspecialchars($order->product->name) . '</strong><br>
+                                    <strong>' . htmlspecialchars($order->product->name) . '</strong>
+                                    <span class="delivery-badge ' . ($order->product->manual_delivery ? 'delivery-manual">Manual Delivery' : 'delivery-instant">Instant Delivery') . '</span><br>
                                     <small style="color: #999;">' . htmlspecialchars($order->product->category->name ?? 'Digital Product') . '</small>
                                 </td>
                                 <td class="qty">' . $order->quantity . '</td>
-                                <td class="price">$' . number_format($order->unit_price, 2) . '</td>
-                                <td class="total">$' . number_format($order->total_amount, 2) . '</td>
+                                <td class="price">' . number_format($order->unit_price, 2) . '</td>
+                                <td class="total">' . number_format($order->total_amount, 2) . '</td>
                             </tr>
                         </tbody>
                     </table>
@@ -673,21 +768,24 @@ class OrdersController extends Controller
                     <div class="totals">
                         <div class="totals-row">
                             <span>Subtotal:</span>
-                            <span>$' . number_format($order->total_amount, 2) . '</span>
+                            <span>' . number_format($order->total_amount, 2) . '</span>
                         </div>
                         ' . ($order->discount_amount > 0 ? '
                         <div class="totals-row discount">
                             <span>Discount' . ($order->promo_code ? ' (' . $order->promo_code . ')' : '') . ':</span>
-                            <span>-$' . number_format($order->discount_amount, 2) . '</span>
+                            <span>- ' . number_format($order->discount_amount, 2) . '</span>
                         </div>' : '') . '
                         <div class="totals-row final">
                             <span>Total:</span>
-                            <span>$' . number_format($order->net_amount, 2) . '</span>
+                            <span>' . number_format($order->net_amount, 2) . '</span>
                         </div>
                     </div>
 
                     <div class="footer">
                         <p>Thank you for your business!</p>
+                        ' . ($order->product->manual_delivery ?
+            '<p>Your order is being processed manually and will be delivered via email within 24-48 hours.</p>' :
+            '<p>Your digital products have been delivered instantly to your account.</p>') . '
                         <p>For support, please contact us through your dashboard or email support.</p>
                         <p>This is a computer-generated invoice and does not require a signature.</p>
                     </div>

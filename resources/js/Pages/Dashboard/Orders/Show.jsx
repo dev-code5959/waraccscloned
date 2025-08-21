@@ -52,6 +52,8 @@ export default function OrderShow({ order, accessCodes, auth }) {
                 return <CheckCircle className="h-5 w-5 text-green-600" />;
             case 'pending':
                 return <Clock className="h-5 w-5 text-amber-600" />;
+            case 'pending_delivery':
+                return <Clock className="h-5 w-5 text-amber-600" />;
             case 'cancelled':
                 return <XCircle className="h-5 w-5 text-red-600" />;
             default:
@@ -64,6 +66,8 @@ export default function OrderShow({ order, accessCodes, auth }) {
             case 'completed':
                 return 'bg-green-100 text-green-800';
             case 'pending':
+                return 'bg-amber-100 text-amber-800';
+            case 'pending_delivery':
                 return 'bg-amber-100 text-amber-800';
             case 'cancelled':
                 return 'bg-red-100 text-red-800';
@@ -108,7 +112,7 @@ export default function OrderShow({ order, accessCodes, auth }) {
                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusBadgeClass(order.status)}`}>
                                 {getStatusIcon(order.status)}
                                 <span className="ml-1">
-                                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                    {order.status.charAt(0).toUpperCase() + order.status.replace('_', ' ').slice(1)}
                                 </span>
                             </span>
                             <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPaymentStatusBadgeClass(order.payment_status)}`}>

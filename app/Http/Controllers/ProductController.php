@@ -74,6 +74,9 @@ class ProductController extends Controller
                     'formatted_price' => $relatedProduct->formatted_price,
                     'thumbnail' => $relatedProduct->thumbnail,
                     'sold_count' => $relatedProduct->sold_count,
+                    'manual_delivery' => $relatedProduct->manual_delivery,
+                    'is_in_stock' => $relatedProduct->is_in_stock,
+                    'available_stock' => $relatedProduct->available_stock,
                 ];
             });
 
@@ -91,8 +94,10 @@ class ProductController extends Controller
             'min_purchase' => $product->min_purchase,
             'max_purchase' => $product->max_purchase,
             'delivery_info' => $product->delivery_info,
+            'manual_delivery' => $product->manual_delivery,
             'is_in_stock' => $product->is_in_stock,
             'available_stock' => $product->available_stock,
+            'effective_stock_quantity' => $product->effective_stock_quantity,
             'category' => [
                 'id' => $product->category->id,
                 'name' => $product->category->name,
@@ -131,6 +136,7 @@ class ProductController extends Controller
         $inStockOnly = $request->boolean('in_stock');
         $phoneVerified = $request->boolean('phone_verified');
         $smtpEnabled = $request->boolean('smtp_enabled');
+        $deliveryType = $request->get('delivery_type', '');
         $perPage = $request->get('per_page', 12);
 
         // Get all product IDs for this category and its children
@@ -143,7 +149,7 @@ class ProductController extends Controller
 
         // Apply filters
         if ($inStockOnly) {
-            $productsQuery->where('stock_quantity', '>', 0);
+            $productsQuery->inStock();
         }
 
         if ($priceMin > 0 || $priceMax < 1000) {
@@ -165,6 +171,13 @@ class ProductController extends Controller
                     ->orWhere('name', 'like', '%smtp%')
                     ->orWhere('description', 'like', '%smtp%');
             });
+        }
+
+        // Filter by delivery type
+        if ($deliveryType === 'manual') {
+            $productsQuery->where('manual_delivery', true);
+        } elseif ($deliveryType === 'automatic') {
+            $productsQuery->where('manual_delivery', false);
         }
 
         // Apply sorting
@@ -207,9 +220,11 @@ class ProductController extends Controller
                 ],
                 'thumbnail' => $product->thumbnail,
                 'stock_quantity' => $product->stock_quantity,
-                'available_stock' => $product->available_stock ?? $product->stock_quantity,
+                'available_stock' => $product->available_stock,
+                'effective_stock_quantity' => $product->effective_stock_quantity,
                 'sold_count' => $product->sold_count,
                 'is_in_stock' => $product->is_in_stock,
+                'manual_delivery' => $product->manual_delivery,
             ];
         });
 
@@ -259,6 +274,7 @@ class ProductController extends Controller
                 'in_stock' => $inStockOnly,
                 'phone_verified' => $phoneVerified,
                 'smtp_enabled' => $smtpEnabled,
+                'delivery_type' => $deliveryType,
                 'price_min' => $priceMin,
                 'price_max' => $priceMax,
             ],
@@ -276,10 +292,24 @@ class ProductController extends Controller
         $canPurchase = $product->canPurchase($quantity);
         $availableStock = $product->available_stock;
 
+        // For manual delivery products, always show as available
+        if ($product->manual_delivery) {
+            return response()->json([
+                'can_purchase' => $canPurchase,
+                'available_stock' => 'unlimited',
+                'stock_quantity' => 'unlimited',
+                'is_manual_delivery' => true,
+                'message' => $canPurchase
+                    ? "Ready to purchase {$quantity} item(s) - Manual Delivery"
+                    : "Product purchase requirements not met",
+            ]);
+        }
+
         return response()->json([
             'can_purchase' => $canPurchase,
             'available_stock' => $availableStock,
             'stock_quantity' => $product->stock_quantity,
+            'is_manual_delivery' => false,
             'message' => $canPurchase
                 ? "Ready to purchase {$quantity} item(s)"
                 : ($availableStock < $quantity
@@ -312,7 +342,18 @@ class ProductController extends Controller
             ], 422);
         }
 
-        // Check stock availability
+        // For manual delivery products, skip stock check
+        if ($product->manual_delivery) {
+            return response()->json([
+                'valid' => true,
+                'subtotal' => $product->price * $quantity,
+                'formatted_subtotal' => '$' . number_format($product->price * $quantity, 2),
+                'is_manual_delivery' => true,
+                'message' => 'Quantity is valid - Manual Delivery',
+            ]);
+        }
+
+        // Check stock availability for automatic delivery
         if (!$product->canPurchase($quantity)) {
             return response()->json([
                 'valid' => false,
@@ -324,6 +365,7 @@ class ProductController extends Controller
             'valid' => true,
             'subtotal' => $product->price * $quantity,
             'formatted_subtotal' => '$' . number_format($product->price * $quantity, 2),
+            'is_manual_delivery' => false,
             'message' => 'Quantity is valid',
         ]);
     }
@@ -331,12 +373,24 @@ class ProductController extends Controller
     public function checkStock(Request $request, Product $product)
     {
         $quantity = $request->input('quantity', 1);
+
+        // For manual delivery products, always return as in stock
+        if ($product->manual_delivery) {
+            return response()->json([
+                'in_stock' => $product->is_active,
+                'available_stock' => 'unlimited',
+                'requested_quantity' => $quantity,
+                'is_manual_delivery' => true,
+            ]);
+        }
+
         $availableStock = $product->available_stock ?? $product->stock_quantity;
 
         return response()->json([
             'in_stock' => $product->is_in_stock && $availableStock >= $quantity,
             'available_stock' => $availableStock,
             'requested_quantity' => $quantity,
+            'is_manual_delivery' => false,
         ]);
     }
 }
