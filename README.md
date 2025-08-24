@@ -39,8 +39,8 @@ php-fileinfo
 
 ### 1. Clone the Repository
 ```bash
-git clone <repository-url>
-cd accszone-clone
+git clone https://github.com/Muhammad-Abdullah-Developer/digital-goods-ecommerce.git
+cd digital-goods-ecommerce
 ```
 
 ### 2. Install PHP Dependencies
