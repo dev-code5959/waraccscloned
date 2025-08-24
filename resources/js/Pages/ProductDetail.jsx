@@ -90,22 +90,6 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
     };
 
     const getStockDisplay = () => {
-        if (product.manual_delivery) {
-            return (
-                <div className={`px-3 py-1 rounded-full text-sm font-medium ${product.is_in_stock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                    {product.is_in_stock ? (
-                        <span className="flex items-center">
-                            <Infinity className="w-4 h-4 mr-1" />
-                            Available
-                        </span>
-                    ) : (
-                        'Not Available'
-                    )}
-                </div>
-            );
-        }
-
         return (
             <div className={`px-3 py-1 rounded-full text-sm font-medium ${product.is_in_stock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                 }`}>

@@ -96,7 +96,7 @@ class ProductController extends Controller
             'delivery_info' => $product->delivery_info,
             'manual_delivery' => $product->manual_delivery,
             'is_in_stock' => $product->is_in_stock,
-            'available_stock' => $product->available_stock,
+            'available_stock' => $product->manual_delivery ? $product->stock_quantity - $product->sold_count : $product->available_stock,
             'effective_stock_quantity' => $product->effective_stock_quantity,
             'category' => [
                 'id' => $product->category->id,
@@ -220,7 +220,7 @@ class ProductController extends Controller
                 ],
                 'thumbnail' => $product->thumbnail,
                 'stock_quantity' => $product->stock_quantity,
-                'available_stock' => $product->available_stock,
+                'available_stock' => $product->manual_delivery ? $product->stock_quantity - $product->sold_count : $product->available_stock,
                 'effective_stock_quantity' => $product->effective_stock_quantity,
                 'sold_count' => $product->sold_count,
                 'is_in_stock' => $product->is_in_stock,

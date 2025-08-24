@@ -200,7 +200,7 @@ export default function CategoryPage({
                                         <div className="col-span-2 text-center">
                                             {getStockBadge(product)}
                                             <div className="text-sm text-gray-500 mt-1">
-                                                {product.manual_delivery ? <Infinity className="w-4 h-4 mx-auto" /> : (product.available_stock || product.stock_quantity) + ' pc'}
+                                                {(product.available_stock || product.stock_quantity) + ' pc'}
                                             </div>
                                         </div>
 
