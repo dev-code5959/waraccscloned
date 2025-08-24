@@ -65,7 +65,7 @@ Route::middleware('auth')->group(function () {
 });
 
 // Dashboard Routes
-Route::middleware(['auth', 'verified', 'role:customer|admin|support'])->prefix('dashboard')->group(function () {
+Route::middleware(['auth', 'role:customer|admin|support'])->prefix('dashboard')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
     // Orders
@@ -109,10 +109,11 @@ Route::middleware(['auth', 'verified', 'role:customer|admin|support'])->prefix('
 });
 
 // Admin Routes
-Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
 
     // // Product Management
+    Route::post('/products/bulk-delete', [ProductManagementController::class, 'bulkDelete'])->name('admin.products.bulk-delete');
     Route::get('/products', [ProductManagementController::class, 'index'])->name('admin.products.index');
     Route::get('/products/create', [ProductManagementController::class, 'create'])->name('admin.products.create');
     Route::post('/products', [ProductManagementController::class, 'store'])->name('admin.products.store');

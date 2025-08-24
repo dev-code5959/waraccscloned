@@ -12,34 +12,9 @@ class HomepageController extends Controller
 {
     public function index()
     {
-        $featuredProducts = Product::with(['category', 'media'])
-            ->active()
-            ->featured()
-            ->inStock()
-            ->limit(8)
-            ->get()
-            ->map(function ($product) {
-                return [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'slug' => $product->slug,
-                    'description' => $product->description,
-                    'price' => $product->price,
-                    'formatted_price' => $product->formatted_price,
-                    'category' => [
-                        'id' => $product->category->id,
-                        'name' => $product->category->name,
-                        'slug' => $product->category->slug,
-                    ],
-                    'thumbnail' => $product->thumbnail,
-                    'stock_quantity' => $product->stock_quantity,
-                    'sold_count' => $product->sold_count,
-                    'is_in_stock' => $product->is_in_stock,
-                ];
-            });
-
         $categories = Category::with('children')
             ->rootCategories()
+            ->limit(5)
             ->active()
             ->ordered()
             ->get()
@@ -50,6 +25,26 @@ class HomepageController extends Controller
                     'slug' => $category->slug,
                     'description' => $category->description,
                     'icon' => $category->icon,
+                    'products' => Product::whereIn('id', $category->getAllProductIds())->limit(5)->active()->get()->map(function ($product) {
+                        return [
+                            'id' => $product->id,
+                            'name' => $product->name,
+                            'slug' => $product->slug,
+                            'description' => $product->description,
+                            'price' => $product->price,
+                            'formatted_price' => '$' . number_format($product->price, 2),
+                            'manual_delivery' => $product->manual_delivery,
+                            'stock_quantity' => $product->stock_quantity,
+                            'is_in_stock' => $product->is_in_stock,
+                            'available_stock' => $product->available_access_codes_count ?? $product->stock_quantity,
+                            'features' => $product->features,
+                            'category' => $product->category ? [
+                                'id' => $product->category->id,
+                                'name' => $product->category->name,
+                                'slug' => $product->category->slug,
+                            ] : null,
+                        ];
+                    }),
                     'products_count' => $category->getTotalProductsCount(),
                     'children' => $category->children->map(function ($child) {
                         return [
@@ -62,36 +57,14 @@ class HomepageController extends Controller
                 ];
             });
 
-        $popularProducts = Product::with(['category', 'media'])
-            ->active()
-            ->inStock()
-            ->popular()
-            ->limit(6)
-            ->get()
-            ->map(function ($product) {
-                return [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'slug' => $product->slug,
-                    'price' => $product->price,
-                    'formatted_price' => $product->formatted_price,
-                    'category' => $product->category->name,
-                    'thumbnail' => $product->thumbnail,
-                    'sold_count' => $product->sold_count,
-                ];
-            });
-
         $stats = [
-            'total_products' => Product::active()->count(),
             'total_categories' => Category::active()->count(),
-            'total_sales' => Product::sum('sold_count'),
-            'happy_customers' => \App\Models\User::role('customer')->count(),
+            'total_products' => Product::active()->count(),
+            'in_stock_products' => Product::active()->inStock()->count(),
         ];
 
         return Inertia::render('Homepage', [
-            'featuredProducts' => $featuredProducts,
             'categories' => $categories,
-            'popularProducts' => $popularProducts,
             'stats' => $stats,
             'meta' => [
                 'title' => config('app.name') . ' - Digital Products Store',

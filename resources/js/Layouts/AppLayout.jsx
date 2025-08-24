@@ -18,14 +18,13 @@ import {
 } from 'lucide-react';
 
 export default function AppLayout({ children, title }) {
-    const { auth, flash } = usePage().props;
+    const { auth, flash, navigationCategories } = usePage().props;
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+    const [activeCategoryDropdown, setActiveCategoryDropdown] = useState(null);
 
     const navigation = [
         { name: 'Home', href: '/', icon: Home },
-        { name: 'Categories', href: '/categories', icon: ShoppingBag },
-        { name: 'Search', href: '/search', icon: Search },
     ];
 
     const userNavigation = auth.user ? [
@@ -35,6 +34,11 @@ export default function AppLayout({ children, title }) {
         { name: 'Support', href: '/dashboard/tickets', icon: MessageCircle },
         { name: 'Profile', href: '/dashboard/profile', icon: Settings },
     ] : [];
+
+    // Function to handle category dropdown toggle
+    const toggleCategoryDropdown = (categoryId) => {
+        setActiveCategoryDropdown(activeCategoryDropdown === categoryId ? null : categoryId);
+    };
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -48,13 +52,12 @@ export default function AppLayout({ children, title }) {
                                 href="/"
                                 className="flex items-center space-x-2 text-white hover:text-blue-400 transition-colors"
                             >
-                                <ShoppingBag className="h-8 w-8" />
-                                <span className="text-xl font-bold">ACCSZone</span>
+                                <img src="/assets/images/logo.png" alt="Logo" className="h-8" />
                             </Link>
                         </div>
 
                         {/* Desktop Navigation */}
-                        <nav className="hidden md:flex space-x-8">
+                        <nav className="hidden md:flex items-center space-x-1">
                             {navigation.map((item) => {
                                 const Icon = item.icon;
                                 return (
@@ -68,6 +71,64 @@ export default function AppLayout({ children, title }) {
                                     </Link>
                                 );
                             })}
+
+                            {/* Category Dropdowns */}
+                            {navigationCategories && navigationCategories.map((category) => (
+                                <div key={category.id} className="relative">
+                                    <button
+                                        onClick={() => toggleCategoryDropdown(category.id)}
+                                        className="flex items-center space-x-1 text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                                        onMouseEnter={() => setActiveCategoryDropdown(category.id)}
+                                        onMouseLeave={() => setActiveCategoryDropdown(null)}
+                                    >
+                                        <span>{category.name}</span>
+                                        <ChevronDown className="h-4 w-4" />
+                                    </button>
+
+                                    {activeCategoryDropdown === category.id && (
+                                        <div
+                                            className="absolute left-0 mt-1 w-48 bg-white rounded-md shadow-lg z-50"
+                                            onMouseEnter={() => setActiveCategoryDropdown(category.id)}
+                                            onMouseLeave={() => setActiveCategoryDropdown(null)}
+                                        >
+                                            <div className="py-1">
+                                                <Link
+                                                    href={`/categories/${category.slug}`}
+                                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-medium"
+                                                >
+                                                    All {category.name}
+                                                </Link>
+                                                {category.children && category.children.length > 0 && (
+                                                    <>
+                                                        <hr className="my-1" />
+                                                        {category.children.map((subcategory) => (
+                                                            <Link
+                                                                key={subcategory.id}
+                                                                href={`/categories/${subcategory.slug}`}
+                                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                            >
+                                                                {subcategory.name}
+                                                                <span className="text-gray-400 text-xs ml-1">
+                                                                    ({subcategory.products_count})
+                                                                </span>
+                                                            </Link>
+                                                        ))}
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+
+                            {/* Search Link */}
+                            <Link
+                                href="/search"
+                                className="flex items-center space-x-1 text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                            >
+                                <Search className="h-4 w-4" />
+                                <span>Search</span>
+                            </Link>
                         </nav>
 
                         {/* User Menu */}
@@ -164,6 +225,45 @@ export default function AppLayout({ children, title }) {
                                     </Link>
                                 );
                             })}
+
+                            {/* Mobile Category Links */}
+                            {navigationCategories && navigationCategories.map((category) => (
+                                <div key={category.id} className="space-y-1">
+                                    <Link
+                                        href={`/categories/${category.slug}`}
+                                        className="flex items-center justify-between text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium"
+                                        onClick={() => setIsMenuOpen(false)}
+                                    >
+                                        <span>{category.name}</span>
+                                        <span className="text-xs text-gray-400">({category.products_count})</span>
+                                    </Link>
+                                    {category.children && category.children.length > 0 && (
+                                        <div className="pl-6 space-y-1">
+                                            {category.children.map((subcategory) => (
+                                                <Link
+                                                    key={subcategory.id}
+                                                    href={`/categories/${subcategory.slug}`}
+                                                    className="flex items-center justify-between text-gray-400 hover:text-white px-3 py-1 rounded-md text-sm"
+                                                    onClick={() => setIsMenuOpen(false)}
+                                                >
+                                                    <span>{subcategory.name}</span>
+                                                    <span className="text-xs text-gray-500">({subcategory.products_count})</span>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+
+                            {/* Mobile Search */}
+                            <Link
+                                href="/search"
+                                className="flex items-center space-x-2 text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
+                                onClick={() => setIsMenuOpen(false)}
+                            >
+                                <Search className="h-4 w-4" />
+                                <span>Search</span>
+                            </Link>
 
                             {auth.user && (
                                 <>

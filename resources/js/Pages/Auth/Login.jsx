@@ -48,7 +48,7 @@ export default function Login({ status, canResetPassword }) {
                     <h2 className="text-3xl font-bold text-white">
                         Sign in to your account
                     </h2>
-                    <p className="mt-2 text-sm text-gray-400">
+                    <p className="mt-2 text-md text-gray-400">
                         Don't have an account?{' '}
                         <Link
                             href={route('register')}
@@ -154,13 +154,13 @@ export default function Login({ status, canResetPassword }) {
                                     checked={data.remember}
                                     onChange={(e) => setData('remember', e.target.checked)}
                                 />
-                                <label htmlFor="remember" className="ml-2 block text-sm text-gray-700">
+                                <label htmlFor="remember" className="ml-2 block text-xs text-gray-700 sm:text-sm">
                                     Remember me
                                 </label>
                             </div>
 
                             {canResetPassword && (
-                                <div className="text-sm">
+                                <div className="text-xs sm:text-sm">
                                     <Link
                                         href={route('password.request')}
                                         className="font-medium text-blue-600 hover:text-blue-500 transition-colors"

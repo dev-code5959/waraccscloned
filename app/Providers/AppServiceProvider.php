@@ -3,6 +3,8 @@
 
 namespace App\Providers;
 
+use App\Models\Category;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Vite;
 use Inertia\Inertia;
@@ -32,11 +34,45 @@ class AppServiceProvider extends ServiceProvider
                     ? session()->get('errors')->getBag('default')->getMessages()
                     : (object) [];
             },
+            'navigationCategories' => $this->getNavigationCategories(),
         ]);
 
         // Force HTTPS in production
         if (app()->environment('production')) {
-            \URL::forceScheme('https');
+            URL::forceScheme('https');
         }
+    }
+
+    /**
+     * Get categories for navigation
+     */
+    private function getNavigationCategories()
+    {
+        return cache()->remember('navigation_categories', 60 * 15, function () {
+            return Category::with(['children' => function ($query) {
+                $query->active()->ordered();
+            }])
+                ->rootCategories()
+                ->active()
+                ->ordered()
+                ->limit(4) // Limit for navigation menu
+                ->get()
+                ->map(function ($category) {
+                    return [
+                        'id' => $category->id,
+                        'name' => $category->name,
+                        'slug' => $category->slug,
+                        'products_count' => $category->getTotalProductsCount(),
+                        'children' => $category->children->map(function ($child) {
+                            return [
+                                'id' => $child->id,
+                                'name' => $child->name,
+                                'slug' => $child->slug,
+                                'products_count' => $child->getTotalProductsCount(),
+                            ];
+                        }),
+                    ];
+                });
+        });
     }
 }

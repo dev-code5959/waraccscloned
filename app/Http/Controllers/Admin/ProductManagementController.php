@@ -87,6 +87,7 @@ class ProductManagementController extends Controller
             'total_orders' => $product->orders()->count(),
             'total_revenue' => $product->orders()->where('status', 'completed')->sum('total_amount'),
             'is_manual_delivery' => $product->manual_delivery,
+            'stock_quantity' => $product->stock_quantity,
         ];
 
         return Inertia::render('Admin/Products/Show', [
@@ -125,6 +126,7 @@ class ProductManagementController extends Controller
             'category_id' => 'required|exists:categories,id',
             'min_purchase' => 'required|integer|min:1',
             'max_purchase' => 'nullable|integer|min:1',
+            'stock_quantity' => 'nullable|integer|min:0',
             'delivery_info' => 'nullable|string',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
@@ -146,12 +148,8 @@ class ProductManagementController extends Controller
             $counter++;
         }
 
-        // Set stock quantity to 0 for manual delivery products
-        if ($validated['manual_delivery'] ?? false) {
-            $validated['stock_quantity'] = 0;
-        } else {
-            $validated['stock_quantity'] = 0; // Will be updated when access codes are added
-        }
+        // Set stock quantity based on user input for both delivery types
+        $validated['stock_quantity'] = $validated['stock_quantity'] ?? 0;
 
         DB::beginTransaction();
         try {
@@ -197,6 +195,7 @@ class ProductManagementController extends Controller
             'category_id' => 'required|exists:categories,id',
             'min_purchase' => 'required|integer|min:1',
             'max_purchase' => 'nullable|integer|min:1',
+            'stock_quantity' => 'nullable|integer|min:0',
             'delivery_info' => 'nullable|string',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
@@ -212,18 +211,19 @@ class ProductManagementController extends Controller
             $validated['slug'] = Str::slug($validated['name']);
         }
 
-        // If switching to manual delivery, clear access codes warning
+        // Track if delivery method is changing
         $switchingToManual = !$product->manual_delivery && ($validated['manual_delivery'] ?? false);
+        $switchingToAutomatic = $product->manual_delivery && !($validated['manual_delivery'] ?? true);
+
+        // Handle stock quantity - simply use the provided value for both delivery types
+        $validated['stock_quantity'] = $validated['stock_quantity'] ?? $product->stock_quantity;
 
         DB::beginTransaction();
         try {
             $product->update($validated);
 
-            // If switching to manual delivery, update stock quantity
-            if ($switchingToManual) {
-                $product->update(['stock_quantity' => 0]);
-            } elseif (!$validated['manual_delivery'] ?? true) {
-                // If switching from manual to automatic, update stock based on access codes
+            // Update stock if switching delivery methods
+            if ($switchingToAutomatic) {
                 $product->updateStock();
             }
 
@@ -244,7 +244,9 @@ class ProductManagementController extends Controller
 
             $message = 'Product updated successfully.';
             if ($switchingToManual) {
-                $message .= ' Note: Product is now set to manual delivery - access codes will not be automatically assigned.';
+                $message .= ' Stock quantity can now be managed manually.';
+            } elseif ($switchingToAutomatic) {
+                $message .= ' Stock quantity will be automatically managed based on access codes.';
             }
 
             return redirect()->route('admin.products.show', $product)
@@ -255,33 +257,187 @@ class ProductManagementController extends Controller
         }
     }
 
+    public function updateStock(Request $request, Product $product)
+    {
+        // Only allow manual stock updates for manual delivery products
+        if (!$product->manual_delivery) {
+            return back()->withErrors(['error' => 'Stock quantity is automatically managed for this product.']);
+        }
+
+        $request->validate([
+            'stock_quantity' => 'required|integer|min:0'
+        ]);
+
+        $product->update(['stock_quantity' => $request->stock_quantity]);
+
+        return back()->with('success', "Stock quantity updated to {$request->stock_quantity}.");
+    }
+
     public function destroy(Product $product)
     {
         DB::beginTransaction();
         try {
-            // Check if product has active orders
-            if ($product->orders()->whereIn('status', ['pending', 'processing'])->exists()) {
-                return back()->withErrors(['error' => 'Cannot delete product with active orders.']);
+            // Check if product has active orders with detailed count
+            $activeOrdersCount = $product->orders()->whereIn('status', ['pending', 'processing'])->count();
+
+            if ($activeOrdersCount > 0) {
+                $errorMessage = "Cannot delete '{$product->name}' because it has {$activeOrdersCount} active order(s).\n\n";
+                $errorMessage .= "Please complete or cancel these orders before deleting the product:";
+
+                // Get details of active orders
+                $activeOrders = $product->orders()
+                    ->whereIn('status', ['pending', 'processing'])
+                    ->with('user:id,name,email')
+                    ->select('id', 'user_id', 'status', 'total_amount', 'created_at')
+                    ->orderBy('created_at', 'desc')
+                    ->limit(5)
+                    ->get();
+
+                foreach ($activeOrders as $order) {
+                    $userName = $order->user ? $order->user->name : 'Unknown User';
+                    $errorMessage .= "\n• Order #{$order->id} - {$userName} - {$order->status} - $" . number_format($order->total_amount, 2);
+                }
+
+                if ($activeOrdersCount > 5) {
+                    $errorMessage .= "\n• ... and " . ($activeOrdersCount - 5) . " more orders";
+                }
+
+                return back()->withErrors(['error' => $errorMessage]);
             }
 
-            // Delete all access codes (only for non-manual delivery products)
+            // Check for any dependencies or constraints
+            $accessCodesCount = 0;
             if (!$product->manual_delivery) {
-                $product->accessCodes()->delete();
+                $accessCodesCount = $product->accessCodes()->count();
+                if ($accessCodesCount > 0) {
+                    $product->accessCodes()->delete();
+                }
             }
+
+            // Get media count before deletion
+            $mediaCount = $product->getMedia('images')->count();
 
             // Delete media
             $product->clearMediaCollection('images');
+
+            // Store product details for success message
+            $productName = $product->name;
+            $productSlug = $product->slug;
 
             // Delete product
             $product->delete();
 
             DB::commit();
 
+            // Create detailed success message
+            $successMessage = "Product '{$productName}' (slug: {$productSlug}) deleted successfully.";
+
+            if ($accessCodesCount > 0) {
+                $successMessage .= "\n• Deleted {$accessCodesCount} associated access codes";
+            }
+
+            if ($mediaCount > 0) {
+                $successMessage .= "\n• Deleted {$mediaCount} associated images";
+            }
+
             return redirect()->route('admin.products.index')
-                ->with('success', 'Product deleted successfully.');
+                ->with('success', $successMessage);
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->withErrors(['error' => 'Failed to delete product: ' . $e->getMessage()]);
+
+            $errorMessage = "Failed to delete product '{$product->name}':\n\n";
+            $errorMessage .= "Error: " . $e->getMessage();
+            $errorMessage .= "\n\nThis might be due to database constraints or file system issues. Please try again or contact support.";
+
+            return back()->withErrors(['error' => $errorMessage]);
+        }
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'product_ids' => 'required|array|min:1',
+            'product_ids.*' => 'exists:products,id'
+        ]);
+
+        $productIds = $request->product_ids;
+        $products = Product::whereIn('id', $productIds)->get();
+
+        if ($products->isEmpty()) {
+            return back()->withErrors(['error' => 'No products found for deletion.']);
+        }
+
+        // Detailed checks for each product
+        $cannotDeleteProducts = [];
+        $reasons = [];
+
+        foreach ($products as $product) {
+            $activeOrdersCount = $product->orders()->whereIn('status', ['pending', 'processing'])->count();
+
+            if ($activeOrdersCount > 0) {
+                $cannotDeleteProducts[] = $product->name;
+                $reasons[] = "{$product->name} has {$activeOrdersCount} active order(s)";
+            }
+        }
+
+        // If any products cannot be deleted, return detailed error
+        if (!empty($cannotDeleteProducts)) {
+            $errorMessage = "Cannot delete the following products due to active orders:\n\n";
+            $errorMessage .= "• " . implode("\n• ", $reasons);
+            $errorMessage .= "\n\nPlease complete or cancel these orders before deleting the products.";
+
+            return back()->withErrors(['error' => $errorMessage]);
+        }
+
+        // Proceed with deletion
+        DB::beginTransaction();
+        try {
+            $deletedCount = 0;
+            $errors = [];
+            $deletedProducts = [];
+
+            foreach ($products as $product) {
+                try {
+                    // Delete all access codes (only for non-manual delivery products)
+                    if (!$product->manual_delivery) {
+                        $deletedCodes = $product->accessCodes()->count();
+                        $product->accessCodes()->delete();
+                    }
+
+                    // Delete media
+                    $product->clearMediaCollection('images');
+
+                    // Store product name before deletion
+                    $productName = $product->name;
+
+                    // Delete product
+                    $product->delete();
+                    $deletedCount++;
+                    $deletedProducts[] = $productName;
+                } catch (\Exception $e) {
+                    $errors[] = "Failed to delete '{$product->name}': " . $e->getMessage();
+                }
+            }
+
+            DB::commit();
+
+            // Prepare success/error messages
+            if ($deletedCount > 0) {
+                $successMessage = "Successfully deleted {$deletedCount} product(s):\n• " . implode("\n• ", $deletedProducts);
+
+                if (!empty($errors)) {
+                    $successMessage .= "\n\nHowever, the following errors occurred:\n• " . implode("\n• ", $errors);
+                }
+
+                return redirect()->route('admin.products.index')
+                    ->with('success', $successMessage);
+            } else {
+                $errorMessage = "Failed to delete any products:\n• " . implode("\n• ", $errors);
+                return back()->withErrors(['error' => $errorMessage]);
+            }
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->withErrors(['error' => 'Database transaction failed: ' . $e->getMessage()]);
         }
     }
 

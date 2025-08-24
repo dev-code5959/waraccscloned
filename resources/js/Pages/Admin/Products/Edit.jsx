@@ -14,7 +14,9 @@ import {
     Truck,
     Zap,
     Info,
-    FileWarning
+    FileWarning,
+    Hash,
+    Package
 } from 'lucide-react';
 
 export default function Edit({ product, categories }) {
@@ -30,6 +32,7 @@ export default function Edit({ product, categories }) {
         category_id: product.category_id || '',
         min_purchase: product.min_purchase || 1,
         max_purchase: product.max_purchase || '',
+        stock_quantity: product.stock_quantity || 0,
         delivery_info: product.delivery_info || '',
         is_featured: product.is_featured || false,
         is_active: product.is_active || true,
@@ -102,6 +105,10 @@ export default function Edit({ product, categories }) {
 
     const handleDeliveryMethodChange = (isManual) => {
         setData('manual_delivery', isManual);
+        // If switching to manual delivery, reset stock quantity to 0
+        if (isManual) {
+            setData('stock_quantity', 0);
+        }
     };
 
     // Check if switching from automatic to manual would affect existing access codes
@@ -269,7 +276,7 @@ export default function Edit({ product, categories }) {
                                         Automatic Delivery
                                     </label>
                                     <p className="text-sm text-gray-500 mt-1">
-                                        Access codes are automatically delivered upon payment confirmation. Requires pre-uploaded access codes.
+                                        Access codes are automatically delivered upon payment confirmation. Stock quantity is managed automatically.
                                     </p>
                                 </div>
                             </div>
@@ -291,7 +298,7 @@ export default function Edit({ product, categories }) {
                                         Manual Delivery
                                     </label>
                                     <p className="text-sm text-gray-500 mt-1">
-                                        Orders will be marked as pending delivery. Admin manually uploads and delivers access codes to customers.
+                                        Orders will be marked as pending delivery. Stock quantity can be managed manually.
                                     </p>
                                 </div>
                             </div>
@@ -308,7 +315,7 @@ export default function Edit({ product, categories }) {
                                             <p>This product currently has {product.access_codes?.length || 0} access codes. Switching to manual delivery will:</p>
                                             <ul className="list-disc list-inside mt-2 space-y-1">
                                                 <li>Keep existing access codes but disable automatic assignment</li>
-                                                <li>Set stock quantity to infinite</li>
+                                                <li>Allow manual stock quantity management</li>
                                                 <li>Require manual processing for new orders</li>
                                             </ul>
                                         </div>
@@ -325,27 +332,7 @@ export default function Edit({ product, categories }) {
                                     <div>
                                         <h4 className="text-sm font-medium text-blue-800">Switching to Automatic Delivery</h4>
                                         <div className="mt-1 text-sm text-blue-700">
-                                            <p>You'll need to upload access codes after saving to enable automatic delivery. Until then, the product will show as out of stock.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Current manual delivery info */}
-                        {data.manual_delivery && !willAffectAccessCodes && (
-                            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-                                <div className="flex items-start">
-                                    <Info className="w-5 h-5 text-blue-400 mt-0.5 mr-3 flex-shrink-0" />
-                                    <div>
-                                        <h4 className="text-sm font-medium text-blue-800">Manual Delivery Mode</h4>
-                                        <div className="mt-1 text-sm text-blue-700">
-                                            <ul className="list-disc list-inside space-y-1">
-                                                <li>Stock quantity will be infinite</li>
-                                                <li>Access code upload will be disabled</li>
-                                                <li>Orders will require manual processing</li>
-                                                <li>Customers will be notified when their order is ready</li>
-                                            </ul>
+                                            <p>You'll need to upload access codes after saving to enable automatic delivery. Stock quantity will be automatically managed based on available codes.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -357,11 +344,36 @@ export default function Edit({ product, categories }) {
                         )}
                     </div>
 
-                    {/* Purchase Settings */}
+                    {/* Stock & Purchase Settings */}
                     <div className="bg-white shadow rounded-lg p-6">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">Purchase Settings</h3>
+                        <h3 className="text-lg font-medium text-gray-900 mb-4">Stock & Purchase Settings</h3>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Stock Quantity <span className="text-red-500">*</span>
+                                </label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <Package className="w-4 h-4 text-gray-400" />
+                                    </div>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={data.stock_quantity}
+                                        onChange={(e) => setData('stock_quantity', e.target.value)}
+                                        className={`w-full pl-10 pr-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${errors.stock_quantity ? 'border-red-300' : 'border-gray-300'}`}
+                                        placeholder="Enter stock quantity"
+                                    />
+                                </div>
+                                {errors.stock_quantity && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.stock_quantity}</p>
+                                )}
+                                <p className="mt-1 text-sm text-gray-500">
+                                    Current available stock quantity
+                                </p>
+                            </div>
+
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Minimum Purchase <span className="text-red-500">*</span>
@@ -389,7 +401,7 @@ export default function Edit({ product, categories }) {
                                     value={data.max_purchase}
                                     onChange={(e) => setData('max_purchase', e.target.value)}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder={data.manual_delivery ? "No limit (Manual Delivery)" : "No limit"}
+                                    placeholder="No limit"
                                 />
                                 {errors.max_purchase && (
                                     <p className="mt-1 text-sm text-red-600">{errors.max_purchase}</p>

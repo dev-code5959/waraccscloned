@@ -163,7 +163,7 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
 
     return (
         <AppLayout>
-            <Head title={meta.title} />
+            <Head title={meta.title} description={meta.description} image={meta.image} />
 
             {/* Flash Messages */}
             {flash?.success && (
@@ -260,15 +260,10 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center space-x-3 text-sm">
                                     <span className="text-blue-600">{product.category?.name}</span>
-                                    <div className="flex items-center text-gray-500">
-                                        <TrendingUp className="h-4 w-4 mr-1" />
-                                        <span>{product.sold_count} sold</span>
-                                    </div>
                                 </div>
                                 {getDeliveryBadge()}
                             </div>
                             <h1 className="text-3xl font-bold text-gray-900 mb-4">{product.name}</h1>
-                            <p className="text-gray-600 mb-6">{product.description}</p>
                         </div>
 
                         {/* Features */}
@@ -359,6 +354,9 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                                         {processing ? 'Processing...' : 'Purchase Now'}
                                     </button>
 
+                                    <p className="text-gray-600 mb-6">{product.description}</p>
+
+
                                     {!auth.user && (
                                         <p className="text-sm text-gray-500 text-center">
                                             <Link href="/login" className="text-blue-600 hover:underline">
@@ -437,10 +435,6 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                                             <span className="text-lg font-bold text-gray-900">
                                                 {relatedProduct.formatted_price}
                                             </span>
-                                            <div className="flex items-center text-sm text-gray-500">
-                                                <TrendingUp className="h-4 w-4 mr-1" />
-                                                {relatedProduct.sold_count} sold
-                                            </div>
                                         </div>
 
                                         <div className="mb-3">

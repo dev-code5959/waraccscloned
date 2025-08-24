@@ -15,7 +15,7 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/x-icon" href="/assets/images/favicon.png">
 
     <!-- Meta Tags -->
     <meta name="description"
@@ -28,13 +28,13 @@
     <meta property="og:title" content="{{ config('app.name', 'ACCSZone') }}">
     <meta property="og:description" content="Your trusted marketplace for digital products">
     <meta property="og:url" content="{{ config('app.url') }}">
-    <meta property="og:image" content="{{ asset('images/og-image.jpg') }}">
+    <meta property="og:image" content="{{ asset('images/og-image.png') }}">
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ config('app.name', 'ACCSZone') }}">
     <meta name="twitter:description" content="Your trusted marketplace for digital products">
-    <meta name="twitter:image" content="{{ asset('images/og-image.jpg') }}">
+    <meta name="twitter:image" content="{{ asset('images/og-image.png') }}">
 
     <!-- Scripts -->
     @routes

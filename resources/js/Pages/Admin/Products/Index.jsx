@@ -29,6 +29,10 @@ export default function Index({ products, categories, filters }) {
     const [selectedStatus, setSelectedStatus] = useState(filters.status || '');
     const [selectedStock, setSelectedStock] = useState(filters.stock || '');
     const [selectedDeliveryType, setSelectedDeliveryType] = useState(filters.delivery_type || '');
+    const [selectedProducts, setSelectedProducts] = useState([]);
+    const [showBulkActions, setShowBulkActions] = useState(false);
+
+    const { errors, flash } = usePage().props;
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -65,6 +69,56 @@ export default function Index({ products, categories, filters }) {
     const deleteProduct = (product) => {
         if (confirm(`Are you sure you want to delete "${product.name}"? This action cannot be undone.`)) {
             router.delete(route('admin.products.destroy', product.id));
+        }
+    };
+
+    const handleSelectAll = (checked) => {
+        if (checked) {
+            setSelectedProducts(products.data.map(product => product.id));
+        } else {
+            setSelectedProducts([]);
+        }
+    };
+
+    const handleSelectProduct = (productId, checked) => {
+        if (checked) {
+            setSelectedProducts(prev => [...prev, productId]);
+        } else {
+            setSelectedProducts(prev => prev.filter(id => id !== productId));
+        }
+    };
+
+    const handleBulkDelete = () => {
+        if (selectedProducts.length === 0) {
+            alert('Please select products to delete.');
+            return;
+        }
+
+        const productNames = products.data
+            .filter(product => selectedProducts.includes(product.id))
+            .map(product => product.name)
+            .slice(0, 3); // Show first 3 names
+
+        const namesList = productNames.length === selectedProducts.length
+            ? productNames.join(', ')
+            : `${productNames.join(', ')} and ${selectedProducts.length - productNames.length} more`;
+
+        if (confirm(`Are you sure you want to delete ${selectedProducts.length} product(s): ${namesList}? This action cannot be undone.`)) {
+            router.post(route('admin.products.bulk-delete'), {
+                product_ids: selectedProducts
+            }, {
+                onSuccess: () => {
+                    setSelectedProducts([]);
+                    setShowBulkActions(false);
+                }
+            });
+        }
+    };
+
+    const toggleBulkActions = () => {
+        setShowBulkActions(!showBulkActions);
+        if (showBulkActions) {
+            setSelectedProducts([]);
         }
     };
 
@@ -124,17 +178,19 @@ export default function Index({ products, categories, filters }) {
     };
 
     const getStockDisplay = (product) => {
+
+        const available = product.available_access_codes_count || 0;
+        const total = product.stock_quantity || 0;
+        const ordered = product.orders_count || 0;
+
+
         if (product.manual_delivery) {
             return (
                 <span className="inline-flex items-center font-medium text-blue-600">
-                    <Infinity className="w-4 h-4 mr-1" />
-                    ∞
+                    {total - ordered}
                 </span>
             );
         }
-
-        const available = product.available_access_codes_count || 0;
-        const total = product.access_codes_count || 0;
 
         return (
             <>
@@ -158,6 +214,25 @@ export default function Index({ products, categories, filters }) {
                         <p className="text-gray-600">Manage your digital products and inventory</p>
                     </div>
                     <div className="flex space-x-3">
+                        <button
+                            onClick={toggleBulkActions}
+                            className={`inline-flex items-center px-4 py-2 border rounded-md shadow-sm text-sm font-medium transition-colors ${showBulkActions
+                                    ? 'bg-gray-100 border-gray-400 text-gray-700'
+                                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                                }`}
+                        >
+                            <Filter className="w-4 h-4 mr-2" />
+                            {showBulkActions ? 'Cancel Selection' : 'Select Items'}
+                        </button>
+                        {showBulkActions && selectedProducts.length > 0 && (
+                            <button
+                                onClick={handleBulkDelete}
+                                className="inline-flex items-center px-4 py-2 border border-red-300 rounded-md shadow-sm bg-red-50 text-sm font-medium text-red-700 hover:bg-red-100"
+                            >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete Selected ({selectedProducts.length})
+                            </button>
+                        )}
                         <Link
                             href={route('admin.categories.index')}
                             className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -174,6 +249,49 @@ export default function Index({ products, categories, filters }) {
                         </Link>
                     </div>
                 </div>
+
+                {/* Flash Messages */}
+                {flash.success && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div className="flex items-center">
+                            <CheckCircle className="h-5 w-5 text-green-400 mr-3" />
+                            <p className="text-sm text-green-700">{flash.success}</p>
+                        </div>
+                    </div>
+                )}
+
+                {(flash.error || errors.error) && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div className="flex items-start">
+                            <XCircle className="h-5 w-5 text-red-400 mr-3 mt-0.5 flex-shrink-0" />
+                            <div className="text-sm text-red-700">
+                                <p className="font-medium">Error:</p>
+                                <p className="mt-1">{flash.error || errors.error}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Bulk Selection Notice */}
+                {showBulkActions && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex items-center">
+                            <div className="flex-shrink-0">
+                                <AlertCircle className="h-5 w-5 text-blue-400" />
+                            </div>
+                            <div className="ml-3">
+                                <p className="text-sm text-blue-700">
+                                    Bulk selection mode is active. Select products using the checkboxes to perform bulk actions.
+                                    {selectedProducts.length > 0 && (
+                                        <span className="font-medium ml-1">
+                                            {selectedProducts.length} product(s) selected.
+                                        </span>
+                                    )}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Filters */}
                 <div className="bg-white p-6 rounded-lg shadow">
@@ -276,6 +394,16 @@ export default function Index({ products, categories, filters }) {
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
+                                    {showBulkActions && (
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedProducts.length === products.data.length && products.data.length > 0}
+                                                onChange={(e) => handleSelectAll(e.target.checked)}
+                                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                            />
+                                        </th>
+                                    )}
                                     <th
                                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                                         onClick={() => handleSort('name')}
@@ -326,6 +454,16 @@ export default function Index({ products, categories, filters }) {
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {products.data.map((product) => (
                                     <tr key={product.id} className="hover:bg-gray-50">
+                                        {showBulkActions && (
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedProducts.includes(product.id)}
+                                                    onChange={(e) => handleSelectProduct(product.id, e.target.checked)}
+                                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                                />
+                                            </td>
+                                        )}
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
                                                 <div className="flex-shrink-0 h-10 w-10">

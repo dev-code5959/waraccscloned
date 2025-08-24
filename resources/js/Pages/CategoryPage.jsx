@@ -177,7 +177,7 @@ export default function CategoryPage({
                             {/* Product Rows */}
                             <div className="divide-y divide-gray-200">
                                 {products.data.map((product) => (
-                                    <div key={product.id} className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors items-center">
+                                    <div key={product.id} className="grid grid-cols-13 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors items-center">
                                         <div className="col-span-1">
                                             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                                                 <Mail className="h-6 w-6 text-blue-600" />
@@ -185,7 +185,9 @@ export default function CategoryPage({
                                         </div>
 
                                         <div className="col-span-6">
-                                            <h3 className="font-medium text-gray-900 mb-1">{product.name}</h3>
+                                            <Link href={`/products/${product.slug}`}>
+                                                <h3 className="font-medium text-gray-900 mb-1">{product.name}</h3>
+                                            </Link>
                                             <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
                                             {product.features && (
                                                 <div className="flex items-center mt-2 text-xs text-green-600">
@@ -213,7 +215,7 @@ export default function CategoryPage({
                                                 className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded font-medium text-sm transition-colors inline-flex items-center"
                                             >
                                                 <ShoppingBag className="h-4 w-4 mr-1" />
-                                                Buy
+                                                Buy now
                                             </Link>
                                         </div>
                                     </div>
