@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useForm, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import RichTextEditor from '@/Components/RichTextEditor';
 import {
     Save,
     ArrowLeft,
@@ -34,6 +35,7 @@ export default function Edit({ product, categories }) {
         max_purchase: product.max_purchase || '',
         stock_quantity: product.stock_quantity || 0,
         delivery_info: product.delivery_info || '',
+        product_code_number: product.product_code_number || '',
         is_featured: product.is_featured || false,
         is_active: product.is_active || true,
         manual_delivery: product.manual_delivery || false,
@@ -224,33 +226,26 @@ export default function Edit({ product, categories }) {
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Description <span className="text-red-500">*</span>
                             </label>
-                            <textarea
+                            <RichTextEditor
                                 value={data.description}
-                                onChange={(e) => setData('description', e.target.value)}
-                                rows={4}
-                                className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${errors.description ? 'border-red-300' : 'border-gray-300'
-                                    }`}
-                                placeholder="Describe your product..."
+                                onChange={(content) => setData('description', content)}
+                                placeholder="Describe your product in detail..."
+                                height="200px"
+                                error={errors.description}
                             />
-                            {errors.description && (
-                                <p className="mt-1 text-sm text-red-600">{errors.description}</p>
-                            )}
                         </div>
 
                         <div className="mt-6">
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Features
                             </label>
-                            <textarea
+                            <RichTextEditor
                                 value={data.features}
-                                onChange={(e) => setData('features', e.target.value)}
-                                rows={3}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="List the key features (one per line)..."
+                                onChange={(content) => setData('features', content)}
+                                placeholder="List the key features and benefits..."
+                                height="150px"
+                                error={errors.features}
                             />
-                            {errors.features && (
-                                <p className="mt-1 text-sm text-red-600">{errors.features}</p>
-                            )}
                         </div>
                     </div>
 
@@ -413,16 +408,32 @@ export default function Edit({ product, categories }) {
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Delivery Information
                             </label>
-                            <textarea
+                            <RichTextEditor
                                 value={data.delivery_info}
-                                onChange={(e) => setData('delivery_info', e.target.value)}
-                                rows={3}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                onChange={(content) => setData('delivery_info', content)}
                                 placeholder="Instructions for customers about delivery..."
+                                height="120px"
+                                error={errors.delivery_info}
                             />
-                            {errors.delivery_info && (
-                                <p className="mt-1 text-sm text-red-600">{errors.delivery_info}</p>
+                        </div>
+
+                        <div className="mt-6">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Product Code Number
+                            </label>
+                            <input
+                                type="text"
+                                value={data.product_code_number}
+                                onChange={(e) => setData('product_code_number', e.target.value)}
+                                className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${errors.product_code_number ? 'border-red-300' : 'border-gray-300'}`}
+                                placeholder="Enter product code number (e.g., PRD001, SKU-123)"
+                            />
+                            {errors.product_code_number && (
+                                <p className="mt-1 text-sm text-red-600">{errors.product_code_number}</p>
                             )}
+                            <p className="mt-1 text-sm text-gray-500">
+                                Unique identifier for this product
+                            </p>
                         </div>
                     </div>
 

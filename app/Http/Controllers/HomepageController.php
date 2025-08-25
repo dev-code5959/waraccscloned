@@ -38,6 +38,7 @@ class HomepageController extends Controller
                             'is_in_stock' => $product->is_in_stock,
                             'available_stock' => $product->available_access_codes_count ?? $product->stock_quantity,
                             'features' => $product->features,
+                            'main_image' => $product->main_image,
                             'category' => $product->category ? [
                                 'id' => $product->category->id,
                                 'name' => $product->category->name,

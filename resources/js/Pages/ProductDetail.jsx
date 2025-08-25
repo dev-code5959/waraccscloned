@@ -17,7 +17,8 @@ import {
     Zap,
     Clock,
     Infinity,
-    AlertCircle
+    AlertCircle,
+    Hash
 } from 'lucide-react';
 
 export default function ProductDetail({ product, relatedProducts, meta, auth, errors, flash }) {
@@ -120,7 +121,7 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                                 This product requires manual processing. After payment, our team will prepare and deliver your digital products via email within 24-48 hours.
                             </p>
                             {product.delivery_info && (
-                                <p className="text-blue-700 text-sm">{product.delivery_info}</p>
+                                <div className="text-gray-600 mb-6 prose mt-6" dangerouslySetInnerHTML={{ __html: product.delivery_info }}></div>
                             )}
                         </div>
                     </div>
@@ -236,6 +237,9 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                                 ))}
                             </div>
                         )}
+
+                        <div className="text-gray-600 mb-6 prose mt-6" dangerouslySetInnerHTML={{ __html: product.description }}></div>
+
                     </div>
 
                     {/* Product Info */}
@@ -254,19 +258,12 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                         {product.features && (
                             <div>
                                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Features</h3>
-                                <div className="space-y-2">
-                                    {product.features.split('\n').map((feature, index) => (
-                                        <div key={index} className="flex items-start space-x-2">
-                                            <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                                            <span className="text-gray-600">{feature}</span>
-                                        </div>
-                                    ))}
-                                </div>
+                                <div className="text-gray-600 mb-6 prose mt-6" dangerouslySetInnerHTML={{ __html: product.features }}></div>
                             </div>
                         )}
 
                         {/* Pricing */}
-                        <div className="bg-gray-50 rounded-lg p-6">
+                        <div className="bg-gray-50 rounded-lg py-6">
                             <div className="flex items-center justify-between mb-4">
                                 <div>
                                     <div className="text-3xl font-bold text-gray-900">{product.formatted_price}</div>
@@ -338,9 +335,6 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                                         {processing ? 'Processing...' : 'Purchase Now'}
                                     </button>
 
-                                    <p className="text-gray-600 mb-6">{product.description}</p>
-
-
                                     {!auth.user && (
                                         <p className="text-sm text-gray-500 text-center">
                                             <Link href="/login" className="text-blue-600 hover:underline">
@@ -364,6 +358,20 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                                 </div>
                             )}
                         </div>
+
+
+                        {/* Product Code Number */}
+                        {product.product_code_number && (
+                            <div className="bg-gray-100 rounded-lg p-4">
+                                <div className="flex items-center space-x-2">
+                                    <Hash className="h-5 w-5 text-gray-400" />
+                                    <div>
+                                        <div className="text-sm font-medium text-gray-600">Product Code</div>
+                                        <div className="text-lg font-mono text-gray-900">{product.product_code_number}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Delivery Info */}
                         {getDeliveryInfoMessage()}
@@ -398,20 +406,27 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             {relatedProducts.map((relatedProduct) => (
                                 <div key={relatedProduct.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden">
-                                    {relatedProduct.thumbnail && (
-                                        <img
-                                            src={relatedProduct.thumbnail}
-                                            alt={relatedProduct.name}
-                                            className="w-full h-48 object-cover"
-                                        />
-                                    )}
+                                    <Link href={`/products/${relatedProduct.slug}`} className="block">
+                                        {relatedProduct.thumbnail && (
+                                            <img
+                                                src={relatedProduct.thumbnail}
+                                                alt={relatedProduct.name}
+                                                className="w-full h-48 object-cover hover:opacity-90 transition-opacity"
+                                            />
+                                        )}
+                                    </Link>
                                     <div className="p-4">
                                         <div className="flex items-center justify-between mb-2">
-                                            <h3 className="font-semibold text-gray-900 line-clamp-2">
-                                                {relatedProduct.name}
-                                            </h3>
+                                            <Link
+                                                href={`/products/${relatedProduct.slug}`}
+                                                className="flex-1 hover:text-blue-600 transition-colors"
+                                            >
+                                                <h3 className="font-semibold text-gray-900 line-clamp-2">
+                                                    {relatedProduct.name}
+                                                </h3>
+                                            </Link>
                                             {relatedProduct.manual_delivery && (
-                                                <Truck className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                                                <Truck className="h-4 w-4 text-blue-600 flex-shrink-0 ml-2" />
                                             )}
                                         </div>
 
@@ -429,8 +444,8 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                                                 </span>
                                             ) : (
                                                 <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${relatedProduct.is_in_stock
-                                                        ? 'bg-green-100 text-green-800'
-                                                        : 'bg-red-100 text-red-800'
+                                                    ? 'bg-green-100 text-green-800'
+                                                    : 'bg-red-100 text-red-800'
                                                     }`}>
                                                     {relatedProduct.is_in_stock
                                                         ? `${relatedProduct.available_stock} available`

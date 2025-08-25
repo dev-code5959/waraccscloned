@@ -130,6 +130,7 @@ class ProductManagementController extends Controller
             'delivery_info' => 'nullable|string',
             'is_featured' => 'boolean',
             'is_active' => 'boolean',
+            'product_code_number' => 'nullable|string|unique:products',
             'manual_delivery' => 'boolean',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048'
@@ -189,6 +190,7 @@ class ProductManagementController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => ['nullable', 'string', 'max:255', Rule::unique('products')->ignore($product->id)],
+            'product_code_number' => ['nullable', 'string', Rule::unique('products')->ignore($product->id)],
             'description' => 'required|string',
             'features' => 'nullable|string',
             'price' => 'required|numeric|min:0',

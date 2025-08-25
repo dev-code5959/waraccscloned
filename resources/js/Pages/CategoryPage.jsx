@@ -180,7 +180,11 @@ export default function CategoryPage({
                                     <div key={product.id} className="grid grid-cols-13 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors items-center">
                                         <div className="col-span-1">
                                             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                                                <Mail className="h-6 w-6 text-blue-600" />
+                                                {product.main_image ? <img
+                                                    src={product.main_image}
+                                                    alt={product.name}
+                                                    className="w-full h-full object-cover"
+                                                /> : <Mail className="h-6 w-6 text-blue-600" />}
                                             </div>
                                         </div>
 
@@ -188,11 +192,11 @@ export default function CategoryPage({
                                             <Link href={`/products/${product.slug}`}>
                                                 <h3 className="font-medium text-gray-900 mb-1">{product.name}</h3>
                                             </Link>
-                                            <p className="text-sm text-gray-600 line-clamp-2">{product.description}</p>
+                                            <div className="text-sm text-gray-600 line-clamp-2" dangerouslySetInnerHTML={{ __html: product.description || `Premium quality ${category.name.toLowerCase()} with verified credentials` }}></div>
                                             {product.features && (
                                                 <div className="flex items-center mt-2 text-xs text-green-600">
                                                     <CheckCircle className="h-3 w-3 mr-1" />
-                                                    <span>{product.features.split('\n')[0]}</span>
+                                                    <span dangerouslySetInnerHTML={{ __html: product.features.split('\n')[0] }}></span>
                                                 </div>
                                             )}
                                         </div>

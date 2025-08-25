@@ -96,6 +96,7 @@ class ProductController extends Controller
             'delivery_info' => $product->delivery_info,
             'manual_delivery' => $product->manual_delivery,
             'is_in_stock' => $product->is_in_stock,
+            'product_code_number' => $product->product_code_number,
             'available_stock' => $product->manual_delivery ? $product->stock_quantity - $product->sold_count : $product->available_stock,
             'effective_stock_quantity' => $product->effective_stock_quantity,
             'category' => [
@@ -213,6 +214,7 @@ class ProductController extends Controller
                 'features' => $product->features,
                 'price' => $product->price,
                 'formatted_price' => $product->formatted_price,
+                'main_image' => $product->main_image,
                 'category' => [
                     'id' => $product->category->id,
                     'name' => $product->category->name,

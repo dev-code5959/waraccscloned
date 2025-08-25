@@ -52,7 +52,7 @@ export default function AppLayout({ children, title }) {
                                 href="/"
                                 className="flex items-center space-x-2 text-white hover:text-blue-400 transition-colors"
                             >
-                                <img src="/assets/images/logo.png" alt="Logo" className="h-8" />
+                                <img src="/assets/images/logo.png" alt="Logo" className="h-14" />
                             </Link>
                         </div>
 
@@ -312,8 +312,7 @@ export default function AppLayout({ children, title }) {
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                         <div className="col-span-1 md:col-span-2">
                             <div className="flex items-center space-x-2 mb-4">
-                                <ShoppingBag className="h-8 w-8 text-blue-400" />
-                                <span className="text-xl font-bold">ACCSZone</span>
+                                <img src="/assets/images/logo.png" alt="Logo" className="h-14" />
                             </div>
                             <p className="text-gray-400 mb-4">
                                 Your trusted marketplace for digital products. Fast delivery, secure payments, and excellent customer support.

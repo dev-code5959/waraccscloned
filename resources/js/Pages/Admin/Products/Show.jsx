@@ -23,7 +23,7 @@ import {
     Truck,
     Zap,
     Info,
-    Infinity
+    Hash
 } from 'lucide-react';
 
 export default function Show({ product, stats }) {
@@ -105,12 +105,9 @@ export default function Show({ product, stats }) {
 
     const getStockDisplay = () => {
         if (product.manual_delivery) {
-            return (
-                <span className="inline-flex items-center text-lg font-medium text-gray-900">
-                    <Infinity className="w-5 h-5 mr-1" />
-                    Infinite
-                </span>
-            );
+            const total = stats.stock_quantity || 0;
+            const ordered = stats.total_orders || 0;
+            return total - ordered;
         }
         return stats.available_codes;
     };
@@ -181,7 +178,7 @@ export default function Show({ product, stats }) {
                             <div>
                                 <h3 className="text-sm font-medium text-blue-800">Manual Delivery Product</h3>
                                 <div className="mt-1 text-sm text-blue-700">
-                                    <p>This product uses manual delivery. Orders will be marked as "pending delivery" and require admin intervention to complete. Stock quantity is infinite.</p>
+                                    <p>This product uses manual delivery. Orders will be marked as "pending delivery" and require admin intervention to complete. Stock quantity is managed manually.</p>
                                 </div>
                             </div>
                         </div>
@@ -214,11 +211,7 @@ export default function Show({ product, stats }) {
                         <div className="p-5">
                             <div className="flex items-center">
                                 <div className="flex-shrink-0">
-                                    {product.manual_delivery ? (
-                                        <Infinity className="h-6 w-6 text-blue-400" />
-                                    ) : (
-                                        <CheckCircle className="h-6 w-6 text-green-400" />
-                                    )}
+                                    <CheckCircle className="h-6 w-6 text-green-400" />
                                 </div>
                                 <div className="ml-5 w-0 flex-1">
                                     <dl>
@@ -298,6 +291,15 @@ export default function Show({ product, stats }) {
                                     <dt className="text-sm font-medium text-gray-500">Price</dt>
                                     <dd className="mt-1 text-sm text-gray-900">${product.price}</dd>
                                 </div>
+                                {product.product_code_number && (
+                                    <div>
+                                        <dt className="text-sm font-medium text-gray-500">Product Code</dt>
+                                        <dd className="mt-1 text-sm text-gray-900 flex items-center">
+                                            <Hash className="w-4 h-4 mr-1 text-gray-400" />
+                                            {product.product_code_number}
+                                        </dd>
+                                    </div>
+                                )}
                                 <div>
                                     <dt className="text-sm font-medium text-gray-500">Delivery Method</dt>
                                     <dd className="mt-1 text-sm text-gray-900">
@@ -307,7 +309,7 @@ export default function Show({ product, stats }) {
                                 <div>
                                     <dt className="text-sm font-medium text-gray-500">Stock Quantity</dt>
                                     <dd className="mt-1 text-sm text-gray-900">
-                                        {product.manual_delivery ? 'Infinite' : product.stock_quantity}
+                                        {product.manual_delivery ? (stats.stock_quantity || 0) : product.stock_quantity}
                                     </dd>
                                 </div>
                                 <div>
@@ -322,20 +324,29 @@ export default function Show({ product, stats }) {
                                 </div>
                                 <div className="sm:col-span-2">
                                     <dt className="text-sm font-medium text-gray-500">Description</dt>
-                                    <dd className="mt-1 text-sm text-gray-900">{product.description}</dd>
+                                    <dd className="mt-1 text-sm text-gray-900 prose" dangerouslySetInnerHTML={{ __html: product.description }}></dd>
                                 </div>
                                 {product.features && (
                                     <div className="sm:col-span-2">
                                         <dt className="text-sm font-medium text-gray-500">Features</dt>
-                                        <dd className="mt-1 text-sm text-gray-900 whitespace-pre-line">
-                                            {product.features}
-                                        </dd>
+                                        <dd className="mt-1 text-sm text-gray-900 whitespace-pre-line prose" dangerouslySetInnerHTML={{ __html: product.features }}></dd>
                                     </div>
                                 )}
                                 {product.delivery_info && (
                                     <div className="sm:col-span-2">
                                         <dt className="text-sm font-medium text-gray-500">Delivery Info</dt>
-                                        <dd className="mt-1 text-sm text-gray-900">{product.delivery_info}</dd>
+                                        <dd className="mt-1 text-sm text-gray-900 prose" dangerouslySetInnerHTML={{ __html: product.delivery_info }}></dd>
+                                    </div>
+                                )}
+                                {product.product_code_number && (
+                                    <div className="sm:col-span-2">
+                                        <dt className="text-sm font-medium text-gray-500">Product Code Number</dt>
+                                        <dd className="mt-1 text-sm text-gray-900 flex items-center">
+                                            <Hash className="w-4 h-4 mr-2 text-gray-400" />
+                                            <span className="font-mono bg-gray-100 px-2 py-1 rounded text-xs">
+                                                {product.product_code_number}
+                                            </span>
+                                        </dd>
                                     </div>
                                 )}
                             </dl>
@@ -528,7 +539,7 @@ export default function Show({ product, stats }) {
                             <div className="mt-1 text-sm text-gray-500 max-w-md mx-auto">
                                 <p>This product uses manual delivery. Orders will be processed manually by administrators.</p>
                                 <ul className="mt-3 text-left list-disc list-inside space-y-1">
-                                    <li>Stock quantity is infinite</li>
+                                    <li>Stock quantity: {stats.stock_quantity || 0}</li>
                                     <li>Access code upload is disabled</li>
                                     <li>Orders require manual processing</li>
                                     <li>Customers receive email notifications when ready</li>

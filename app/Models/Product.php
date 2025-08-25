@@ -31,6 +31,7 @@ class Product extends Model implements HasMedia
         'min_purchase',
         'max_purchase',
         'delivery_info',
+        'product_code_number',
     ];
 
     protected $casts = [
@@ -43,6 +44,7 @@ class Product extends Model implements HasMedia
         'manual_delivery' => 'boolean',
         'min_purchase' => 'integer',
         'max_purchase' => 'integer',
+        'product_code_number' => 'string',
     ];
 
     public function getActivitylogOptions(): LogOptions

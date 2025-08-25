@@ -94,7 +94,11 @@ export default function Homepage({
                                             <div className="hidden md:grid grid-cols-13 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors items-center">
                                                 <div className="col-span-1">
                                                     <div className={`w-12 h-12 bg-${getCategoryColor(categoryIndex)}-100 rounded-lg flex items-center justify-center`}>
-                                                        {React.createElement(getCategoryIcon(category.name), {
+                                                        {product.main_image ? <img
+                                                            src={product.main_image}
+                                                            alt={product.name}
+                                                            className="w-full h-full object-cover"
+                                                        /> : React.createElement(getCategoryIcon(category.name), {
                                                             className: `h-6 w-6 text-${getCategoryColor(categoryIndex)}-600`
                                                         })}
                                                     </div>
@@ -104,21 +108,19 @@ export default function Homepage({
                                                     <Link href={`/products/${product.slug}`}>
                                                         <h3 className="font-medium text-gray-900 mb-1">{product.name}</h3>
                                                     </Link>
-                                                    <p className="text-sm text-gray-600 line-clamp-2">
-                                                        {product.description || `Premium quality ${category.name.toLowerCase()} with verified credentials`}
-                                                    </p>
+                                                    <div className="text-sm text-gray-600 line-clamp-2" dangerouslySetInnerHTML={{ __html: product.description || `Premium quality ${category.name.toLowerCase()} with verified credentials` }}></div>
                                                     {product.features && (
                                                         <div className="flex items-center mt-2 text-xs text-green-600">
                                                             <CheckCircle className="h-3 w-3 mr-1" />
-                                                            <span>{product.features.split('\n')[0] || 'Verified | Instant Delivery | 24/7 Support'}</span>
+                                                            <span dangerouslySetInnerHTML={{ __html: product.features.split('\n')[0] }}></span>
                                                         </div>
                                                     )}
                                                 </div>
 
                                                 <div className="col-span-2 text-center">
                                                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${product.is_in_stock
-                                                            ? 'bg-green-100 text-green-800'
-                                                            : 'bg-red-100 text-red-800'
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : 'bg-red-100 text-red-800'
                                                         }`}>
                                                         {product.is_in_stock ? 'In Stock' : 'Out of Stock'}
                                                     </span>
@@ -156,20 +158,18 @@ export default function Homepage({
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <h3 className="font-medium text-gray-900 mb-1">{product.name}</h3>
-                                                        <p className="text-sm text-gray-600 mb-2">
-                                                            {product.description || `Premium quality ${category.name.toLowerCase()} with verified credentials`}
-                                                        </p>
+                                                        <div className="text-sm text-gray-600 mb-2" dangerouslySetInnerHTML={{ __html: product.description || `Premium quality ${category.name.toLowerCase()} with verified credentials` }}></div>
                                                         {product.features && (
-                                                            <div className="flex items-center mb-3 text-xs text-green-600">
+                                                            <div className="flex items-center mt-2 text-xs text-green-600">
                                                                 <CheckCircle className="h-3 w-3 mr-1" />
-                                                                <span>{product.features.split('\n')[0] || 'Verified | Instant Delivery'}</span>
+                                                                <span dangerouslySetInnerHTML={{ __html: product.features.split('\n')[0] }}></span>
                                                             </div>
                                                         )}
                                                         <div className="flex items-center justify-between">
                                                             <div className="flex items-center space-x-4">
                                                                 <span className={`px-2 py-1 rounded text-xs font-medium ${product.is_in_stock
-                                                                        ? 'bg-green-100 text-green-800'
-                                                                        : 'bg-red-100 text-red-800'
+                                                                    ? 'bg-green-100 text-green-800'
+                                                                    : 'bg-red-100 text-red-800'
                                                                     }`}>
                                                                     {product.is_in_stock ? 'In Stock' : 'Out of Stock'}
                                                                 </span>
