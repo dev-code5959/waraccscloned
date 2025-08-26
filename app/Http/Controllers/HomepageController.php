@@ -95,11 +95,11 @@ class HomepageController extends Controller
         if (!empty($query)) {
             $productsQuery->where(function ($q) use ($query) {
                 $q->where('name', 'like', '%' . $query . '%')
-                  ->orWhere('description', 'like', '%' . $query . '%')
-                  ->orWhere('features', 'like', '%' . $query . '%')
-                  ->orWhereHas('category', function ($categoryQuery) use ($query) {
-                      $categoryQuery->where('name', 'like', '%' . $query . '%');
-                  });
+                    ->orWhere('description', 'like', '%' . $query . '%')
+                    ->orWhere('features', 'like', '%' . $query . '%')
+                    ->orWhereHas('category', function ($categoryQuery) use ($query) {
+                        $categoryQuery->where('name', 'like', '%' . $query . '%');
+                    });
             });
         }
 
@@ -130,19 +130,18 @@ class HomepageController extends Controller
                 $productsQuery->orderBy('created_at', 'desc');
                 break;
             case 'popularity':
-                // This would need a popularity score or order count
-                $productsQuery->orderBy('created_at', 'desc');
+                $productsQuery->orderBy('sold_count', 'desc');
                 break;
             default: // relevance
                 if (!empty($query)) {
                     // Basic relevance: exact matches first, then partial matches
                     $productsQuery->orderByRaw("
-                        CASE
-                            WHEN name LIKE ? THEN 1
-                            WHEN description LIKE ? THEN 2
-                            ELSE 3
-                        END, name ASC
-                    ", ['%' . $query . '%', '%' . $query . '%']);
+                    CASE
+                        WHEN name LIKE ? THEN 1
+                        WHEN description LIKE ? THEN 2
+                        ELSE 3
+                    END, name ASC
+                ", ['%' . $query . '%', '%' . $query . '%']);
                 } else {
                     $productsQuery->orderBy('created_at', 'desc');
                 }
@@ -162,8 +161,10 @@ class HomepageController extends Controller
                 'price' => $product->price,
                 'formatted_price' => '$' . number_format($product->price, 2),
                 'is_in_stock' => $product->is_in_stock,
-                'available_stock' => $product->available_access_codes_count ?? $product->stock_quantity,
+                'available_stock' => $product->manual_delivery ? 999 : ($product->available_access_codes_count ?? $product->stock_quantity),
+                'stock_quantity' => $product->manual_delivery ? 999 : $product->stock_quantity,
                 'features' => $product->features,
+                'main_image' => $product->main_image,
                 'category' => $product->category ? [
                     'id' => $product->category->id,
                     'name' => $product->category->name,
@@ -177,13 +178,27 @@ class HomepageController extends Controller
             ->orderBy('name')
             ->get()
             ->map(function ($category) {
+                // Use direct database query for more accurate count
+                $productsCount = Product::where('category_id', $category->id)
+                    ->where('is_active', true)
+                    ->count();
+
+                // If you want to include child categories, use this instead:
+                // $productsCount = $category->getRecursiveProductCount();
+
                 return [
                     'id' => $category->id,
                     'name' => $category->name,
                     'slug' => $category->slug,
-                    'products_count' => $category->getTotalProductsCount(),
+                    'products_count' => $productsCount,
                 ];
-            });
+            })
+            ->filter(function ($category) {
+                // Only include categories that have products
+                return $category['products_count'] > 0;
+            })
+            ->values()
+            ->toArray();
 
         // Generate search suggestions
         $suggestions = [];
@@ -191,7 +206,7 @@ class HomepageController extends Controller
             $suggestions = $this->generateSearchSuggestions($query);
         }
 
-        // Popular searches (hardcoded for now, could be from database)
+        // Popular searches (could be from database)
         $popularSearches = [
             'Gmail PVA',
             'Gmail SMTP',
@@ -222,6 +237,8 @@ class HomepageController extends Controller
                 'prev_page_url' => $products->previousPageUrl(),
                 'next_page_url' => $products->nextPageUrl(),
                 'path' => $products->path(),
+                'from' => $products->firstItem(),
+                'to' => $products->lastItem(),
             ],
             'categories' => $categories,
             'filters' => [
@@ -243,6 +260,7 @@ class HomepageController extends Controller
         ]);
     }
 
+
     /**
      * Generate search suggestions when no results found
      */
@@ -257,7 +275,7 @@ class HomepageController extends Controller
                 foreach ($words as $word) {
                     if (strlen($word) > 2) {
                         $q->orWhere('name', 'like', '%' . $word . '%')
-                          ->orWhere('description', 'like', '%' . $word . '%');
+                            ->orWhere('description', 'like', '%' . $word . '%');
                     }
                 }
             })

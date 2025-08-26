@@ -442,17 +442,17 @@ export default function SearchPage({
                                                                             {product.formatted_price}
                                                                         </div>
                                                                     </div>
-                                                                      <Link
-                                                                          href={`/products/${product.slug}`}
-                                                                          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded font-medium text-sm transition-colors"
-                                                                      >
-                                                                          Buy Now
-                                                                      </Link>
-                                                                  </div>
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                  </div>
+                                                                    <Link
+                                                                        href={`/products/${product.slug}`}
+                                                                        className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded font-medium text-sm transition-colors"
+                                                                    >
+                                                                        Buy Now
+                                                                    </Link>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
@@ -479,8 +479,8 @@ export default function SearchPage({
                                                         key={page}
                                                         href={`${pagination.path}?page=${page}&q=${encodeURIComponent(query)}`}
                                                         className={`px-3 py-2 text-sm border rounded-lg ${isCurrentPage
-                                                                ? 'bg-blue-500 text-white border-blue-500'
-                                                                : 'text-gray-600 hover:text-gray-900 border-gray-300 hover:bg-gray-50'
+                                                            ? 'bg-blue-500 text-white border-blue-500'
+                                                            : 'text-gray-600 hover:text-gray-900 border-gray-300 hover:bg-gray-50'
                                                             }`}
                                                     >
                                                         {page}

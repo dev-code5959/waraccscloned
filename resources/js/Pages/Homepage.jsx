@@ -57,113 +57,133 @@ export default function Homepage({
             {categories.map((category, categoryIndex) => (
                 <section key={category.id} className="py-6 bg-gray-50">
                     <div className="max-w-6xl mx-auto px-4">
-                        {/* Category Header */}
-                        <div className="bg-gray-800 text-white px-6 py-3 rounded-t-lg">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-sm font-medium">{category.name}</h2>
-                                <div className="flex items-center">
-                                    <span className="w-24 text-center mr-20 text-sm text-gray-300">In Stock</span>
-                                    <span className="w-20 text-right mr-6 text-sm text-gray-300">Price</span>
-                                </div>
-                            </div>
-                        </div>
+                        {/* Category Table */}
+                        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+                            <table className="w-full">
+                                {/* Table Header */}
+                                <thead>
+                                    <tr className="bg-gray-800 text-white">
+                                        <th className="px-6 py-3 text-left w-[55%]">
+                                            <h2 className="text-sm font-medium">{category.name}</h2>
+                                        </th>
+                                        <th className="hidden md:table-cell px-4 py-3 text-center w-[15%]">
+                                            <span className="text-sm text-gray-300">In Stock</span>
+                                        </th>
+                                        <th className="hidden md:table-cell px-4 py-3 text-right w-[15%]">
+                                            <span className="text-sm text-gray-300">Price</span>
+                                        </th>
+                                        <th className="hidden md:table-cell px-6 py-3 w-[15%]">
+                                            {/* Action column header - empty */}
+                                        </th>
+                                    </tr>
+                                </thead>
 
-                        {/* Product Rows */}
-                        <div className="bg-white shadow-sm rounded-b-lg overflow-hidden">
-                            {category.products && category.products.length > 0 ? (
-                                category.products.map((product, index) => (
-                                    <div key={product.id} className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors">
-                                        {/* Desktop Layout */}
-                                        <div className="hidden md:flex items-center px-6 py-4">
-                                            <div className="flex items-center flex-1">
-                                                <div className="w-8 h-8 bg-red-100 rounded flex items-center justify-center mr-4 flex-shrink-0">
-                                                    {product.main_image ? (
-                                                        <img
-                                                            src={product.main_image}
-                                                            alt={product.name}
-                                                            className="w-full h-full object-cover rounded"
-                                                        />
-                                                    ) : (
-                                                        React.createElement(getCategoryIcon(category.name), {
-                                                            className: "h-5 w-5 text-red-600"
-                                                        })
-                                                    )}
-                                                </div>
-                                                <div className="flex-1">
-                                                    <Link
-                                                        href={`/products/${product.slug}`}
-                                                        className="text-sm text-gray-900 leading-relaxed hover:underline"
-                                                    >
-                                                        {product.name}
-                                                    </Link>
-                                                </div>
-                                            </div>
+                                {/* Table Body */}
+                                <tbody>
+                                    {category.products && category.products.length > 0 ? (
+                                        category.products.map((product, index) => (
+                                            <tr key={product.id} className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors">
+                                                {/* Desktop Layout */}
+                                                <td className="hidden md:table-cell px-6 py-4">
+                                                    <div className="flex items-center">
+                                                        <div className="w-8 h-8 bg-red-100 rounded flex items-center justify-center mr-4 flex-shrink-0">
+                                                            {product.main_image ? (
+                                                                <img
+                                                                    src={product.main_image}
+                                                                    alt={product.name}
+                                                                    className="w-full h-full object-cover rounded"
+                                                                />
+                                                            ) : (
+                                                                React.createElement(getCategoryIcon(category.name), {
+                                                                    className: "h-5 w-5 text-red-600"
+                                                                })
+                                                            )}
+                                                        </div>
+                                                        <Link
+                                                            href={`/products/${product.slug}`}
+                                                            className="text-sm text-gray-900 leading-relaxed hover:underline"
+                                                        >
+                                                            {product.name}
+                                                        </Link>
+                                                    </div>
+                                                </td>
 
-                                            <div className="flex items-center">
-                                                <div className="w-24 text-center mr-20">
+                                                <td className="hidden md:table-cell px-4 py-4 text-center">
                                                     <div className="text-sm text-gray-700">
                                                         {product.stock_quantity} pcs.
                                                     </div>
                                                     <div className="text-xs text-gray-500 mt-0.5">
                                                         Price per pc
                                                     </div>
-                                                </div>
+                                                </td>
 
-                                                <div className="w-20 text-right mr-6">
+                                                <td className="hidden md:table-cell px-4 py-4 text-right">
                                                     <div className="text-sm text-gray-900">
                                                         from {product.formatted_price}
                                                     </div>
-                                                </div>
+                                                </td>
 
-                                                <Link
-                                                    href={`/products/${product.slug}`}
-                                                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors"
-                                                >
-                                                    Buy Now
-                                                </Link>
-                                            </div>
-                                        </div>
-
-                                        {/* Mobile Layout */}
-                                        <div className="md:hidden px-4 py-3">
-                                            <div className="flex items-start space-x-3">
-                                                <div className="w-8 h-8 bg-red-100 rounded flex items-center justify-center flex-shrink-0">
-                                                    {React.createElement(getCategoryIcon(category.name), {
-                                                        className: "h-4 w-4 text-red-600"
-                                                    })}
-                                                </div>
-                                                <div className="flex-1">
-                                                <div className="text-sm text-gray-900 mb-2">
-                                                    <Link href={`/products/${product.slug}`} className="hover:underline">
-                                                        {product.name}
+                                                <td className="hidden md:table-cell px-6 py-4">
+                                                    <Link
+                                                        href={`/products/${product.slug}`}
+                                                        className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors inline-block"
+                                                    >
+                                                        Buy Now
                                                     </Link>
-                                                </div>
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="text-xs text-gray-500">
-                                                            {product.stock_quantity} pcs. - Price per pc
+                                                </td>
+
+                                                {/* Mobile Layout - Single Column */}
+                                                <td className="md:hidden px-4 py-3" colSpan="4">
+                                                    <div className="flex items-start space-x-3">
+                                                        <div className="w-8 h-8 bg-red-100 rounded flex items-center justify-center flex-shrink-0">
+                                                            {product.main_image ? (
+                                                                <img
+                                                                    src={product.main_image}
+                                                                    alt={product.name}
+                                                                    className="w-full h-full object-cover rounded"
+                                                                />
+                                                            ) : (
+                                                                React.createElement(getCategoryIcon(category.name), {
+                                                                    className: "h-4 w-4 text-red-600"
+                                                                })
+                                                            )}
                                                         </div>
-                                                        <div className="text-sm text-gray-900">
-                                                            from {product.formatted_price}
+                                                        <div className="flex-1">
+                                                            <div className="text-sm text-gray-900 mb-2">
+                                                                <Link href={`/products/${product.slug}`} className="hover:underline">
+                                                                    {product.name}
+                                                                </Link>
+                                                            </div>
+                                                            <div className="flex items-center justify-between">
+                                                                <div className="text-xs text-gray-500">
+                                                                    {product.stock_quantity} pcs. - Price per pc
+                                                                </div>
+                                                                <div className="text-sm text-gray-900">
+                                                                    from {product.formatted_price}
+                                                                </div>
+                                                            </div>
+                                                            <div className="mt-2">
+                                                                <Link
+                                                                    href={`/products/${product.slug}`}
+                                                                    className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors inline-block w-full text-center"
+                                                                >
+                                                                    Buy Now
+                                                                </Link>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    <div className="mt-2">
-                                                        <Link
-                                                            href={`/products/${product.slug}`}
-                                                            className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors w-full text-center"
-                                                        >
-                                                            Buy Now
-                                                        </Link>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="px-6 py-8 text-center text-sm text-gray-500">
-                                    No products available in this category yet.
-                                </div>
-                            )}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="4" className="px-6 py-8 text-center text-sm text-gray-500">
+                                                No products available in this category yet.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
 
                         {/* View More Link */}

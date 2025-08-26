@@ -139,8 +139,42 @@ class Category extends Model
             ->count();
     }
 
+    // Additional optimized methods for better performance
+    public function getDirectProductsCount()
+    {
+        return $this->activeProducts()->count();
+    }
+
+    public function getInStockProductsCount()
+    {
+        return $this->activeProducts()
+            ->where(function ($query) {
+                $query->where('manual_delivery', true)
+                    ->orWhere('stock_quantity', '>', 0);
+            })
+            ->count();
+    }
+
+    public function getTotalInStockProductsCount()
+    {
+        $productIds = $this->getAllProductIds();
+
+        return Product::whereIn('id', $productIds)
+            ->where('is_active', true)
+            ->where(function ($query) {
+                $query->where('manual_delivery', true)
+                    ->orWhere('stock_quantity', '>', 0);
+            })
+            ->count();
+    }
+
     public function hasProducts()
     {
         return $this->getTotalProductsCount() > 0;
+    }
+
+    public function hasInStockProducts()
+    {
+        return $this->getTotalInStockProductsCount() > 0;
     }
 }
