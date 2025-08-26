@@ -39,7 +39,7 @@ export default function ConfirmPassword() {
                         <div className="bg-blue-600 p-2 rounded-lg">
                             <ShoppingBag className="h-8 w-8 text-white" />
                         </div>
-                        <span className="text-2xl font-bold text-white">ACCSZone</span>
+                        <span className="text-2xl font-bold text-white">WarAccounts</span>
                     </div>
                     <div className="bg-orange-100 rounded-full p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                         <Shield className="h-8 w-8 text-orange-600" />

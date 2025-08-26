@@ -29,7 +29,7 @@ export default function VerifyEmail({ status, user }) {
                         <div className="bg-blue-600 p-2 rounded-lg">
                             <ShoppingBag className="h-8 w-8 text-white" />
                         </div>
-                        <span className="text-2xl font-bold text-white">ACCSZone</span>
+                        <span className="text-2xl font-bold text-white">WarAccounts</span>
                     </Link>
                     <div className="bg-blue-100 rounded-full p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                         <Mail className="h-8 w-8 text-blue-600" />

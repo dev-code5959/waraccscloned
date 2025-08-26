@@ -25,8 +25,8 @@ class WelcomeNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Welcome to ACCSZone!')
-            ->greeting('Welcome to ACCSZone, ' . $this->user->name . '!')
+            ->subject('Welcome to WarAccounts!')
+            ->greeting('Welcome to WarAccounts, ' . $this->user->name . '!')
             ->line('Your account has been successfully created.')
             ->line('You can now browse our digital products and make purchases.')
             ->line('Here are some things you can do:')
@@ -66,9 +66,9 @@ class LoginNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('New login to your ACCSZone account')
+            ->subject('New login to your WarAccounts account')
             ->greeting('Hello ' . $notifiable->name . ',')
-            ->line('We detected a new login to your ACCSZone account.')
+            ->line('We detected a new login to your WarAccounts account.')
             ->line('**Login Details:**')
             ->line('Time: ' . $this->loginTime->format('F j, Y \a\t g:i A T'))
             ->line('IP Address: ' . $this->ipAddress)
@@ -110,7 +110,7 @@ class PasswordResetNotification extends Notification implements ShouldQueue
         ], false));
 
         return (new MailMessage)
-            ->subject('Reset Password - ACCSZone')
+            ->subject('Reset Password - WarAccounts')
             ->greeting('Hello ' . $notifiable->name . ',')
             ->line('You are receiving this email because we received a password reset request for your account.')
             ->action('Reset Password', $url)
@@ -138,14 +138,14 @@ class EmailVerificationNotification extends VerifyEmail implements ShouldQueue
         $verificationUrl = $this->verificationUrl($notifiable);
 
         return (new MailMessage)
-            ->subject('Verify Your Email Address - ACCSZone')
+            ->subject('Verify Your Email Address - WarAccounts')
             ->greeting('Hello ' . $notifiable->name . '!')
-            ->line('Thank you for creating an ACCSZone account.')
+            ->line('Thank you for creating an WarAccounts account.')
             ->line('Please click the button below to verify your email address.')
             ->action('Verify Email Address', $verificationUrl)
             ->line('This verification link will expire in 60 minutes.')
             ->line('If you did not create an account, no further action is required.')
-            ->salutation('Best regards, The ACCSZone Team');
+            ->salutation('Best regards, The WarAccounts Team');
     }
 }
 
@@ -174,9 +174,9 @@ class AccountSuspendedNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Account Suspended - ACCSZone')
+            ->subject('Account Suspended - WarAccounts')
             ->greeting('Hello ' . $notifiable->name . ',')
-            ->line('Your ACCSZone account has been suspended.')
+            ->line('Your WarAccounts account has been suspended.')
             ->line('**Reason:** ' . $this->reason)
             ->line('If you believe this is a mistake or would like to appeal this decision, please contact our support team.')
             ->action('Contact Support', url('/contact'))

@@ -1,4 +1,4 @@
-# ACCSZone Clone - Digital Products Marketplace
+# WarAccounts Clone - Digital Products Marketplace
 
 A modern eCommerce platform tailored for the secure sale of digital goods, featuring crypto payments, automated delivery, and comprehensive admin controls.
 
@@ -72,7 +72,7 @@ cp .env.example .env
 ```bash
 # Create database
 mysql -u root -p
-CREATE DATABASE accszone_clone;
+CREATE DATABASE waraccounts_clone;
 EXIT;
 
 # Run migrations and seeders
@@ -167,12 +167,12 @@ npm run build
 After running the seeders, you'll have access to:
 
 ### Admin Account
-- **Email**: admin@accszone.com
+- **Email**: admin@waraccounts.com
 - **Password**: password
 - **Role**: Administrator
 
 ### Customer Account
-- **Email**: customer@accszone.com
+- **Email**: customer@waraccounts.com
 - **Password**: password
 - **Role**: Customer
 
@@ -194,7 +194,7 @@ After running the seeders, you'll have access to:
 ## 📁 Project Structure
 
 ```
-accszone-clone/
+waraccounts-clone/
 ├── app/
 │   ├── Http/Controllers/
 │   │   ├── Admin/          # Admin panel controllers

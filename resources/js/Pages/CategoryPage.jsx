@@ -8,7 +8,6 @@ import {
     Grid,
     List,
     Star,
-    ShoppingBag,
     ChevronDown,
     Search,
     Mail,
@@ -188,9 +187,9 @@ export default function CategoryPage({
                                         </div>
                                         <h2 className="text-sm font-medium">{category.name}</h2>
                                     </div>
-                                    <div className="flex items-center space-x-32">
-                                        <span className="text-sm text-gray-300">In Stock</span>
-                                        <span className="text-sm text-gray-300">Price</span>
+                                    <div className="flex items-center">
+                                        <span className="w-24 text-center mr-20 text-sm text-gray-300">In Stock</span>
+                                        <span className="w-20 text-right mr-6 text-sm text-gray-300">Price</span>
                                     </div>
                                 </div>
                             </div>
@@ -216,9 +215,12 @@ export default function CategoryPage({
                                                     )}
                                                 </div>
                                                 <div className="flex-1">
-                                                    <div className="text-sm text-gray-900 leading-relaxed">
+                                                    <Link
+                                                        href={`/products/${product.slug}`}
+                                                        className="text-sm text-gray-900 leading-relaxed hover:underline"
+                                                    >
                                                         {product.name}
-                                                    </div>
+                                                    </Link>
                                                 </div>
                                             </div>
 
@@ -240,10 +242,9 @@ export default function CategoryPage({
 
                                                 <Link
                                                     href={`/products/${product.slug}`}
-                                                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors inline-flex items-center"
+                                                    className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors"
                                                 >
-                                                    <ShoppingBag className="h-3 w-3 mr-1" />
-                                                    Buy
+                                                    Buy Now
                                                 </Link>
                                             </div>
                                         </div>
@@ -258,7 +259,9 @@ export default function CategoryPage({
                                                 </div>
                                                 <div className="flex-1">
                                                     <div className="text-sm text-gray-900 mb-2">
-                                                        {product.name}
+                                                        <Link href={`/products/${product.slug}`} className="hover:underline">
+                                                            {product.name}
+                                                        </Link>
                                                     </div>
                                                     <div className="flex items-center justify-between">
                                                         <div className="text-xs text-gray-500">
@@ -271,10 +274,9 @@ export default function CategoryPage({
                                                     <div className="mt-2">
                                                         <Link
                                                             href={`/products/${product.slug}`}
-                                                            className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors w-full inline-flex items-center justify-center"
+                                                            className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors w-full text-center"
                                                         >
-                                                            <ShoppingBag className="h-3 w-3 mr-1" />
-                                                            Buy
+                                                            Buy Now
                                                         </Link>
                                                     </div>
                                                 </div>

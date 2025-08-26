@@ -328,9 +328,9 @@ export default function TicketsCreate({
                             <div className="space-y-2 text-sm text-gray-600">
                                 <p>For urgent issues, you can also reach us at:</p>
                                 <div className="space-y-1">
-                                    <div>📧 support@accszone.com</div>
+                                    <div>📧 support@waraccounts.com</div>
                                     <div>💬 Live chat (business hours)</div>
-                                    <div>📱 Telegram: @ACCSZoneSupport</div>
+                                    <div>📱 Telegram: @WarAccountsSupport</div>
                                 </div>
                             </div>
                         </div>

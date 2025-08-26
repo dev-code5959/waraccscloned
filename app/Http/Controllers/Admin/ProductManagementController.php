@@ -178,6 +178,7 @@ class ProductManagementController extends Controller
     {
         $categories = Category::active()->orderBy('name')->get();
         $product->load('media');
+        $product->append('image_gallery');
 
         return Inertia::render('Admin/Products/Edit', [
             'product' => $product,

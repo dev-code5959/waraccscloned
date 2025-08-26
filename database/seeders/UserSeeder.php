@@ -14,7 +14,7 @@ class UserSeeder extends Seeder
         // Create admin user
         $admin = User::create([
             'name' => 'Admin User',
-            'email' => 'admin@accszone.com',
+            'email' => 'admin@waraccounts.com',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
             'balance' => 10000.00,
@@ -26,7 +26,7 @@ class UserSeeder extends Seeder
         // Create support user
         $support = User::create([
             'name' => 'Support Agent',
-            'email' => 'support@accszone.com',
+            'email' => 'support@waraccounts.com',
             'password' => Hash::make('password'),
             'email_verified_at' => now(),
             'balance' => 1000.00,

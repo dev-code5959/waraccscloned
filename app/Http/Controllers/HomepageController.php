@@ -172,11 +172,8 @@ class HomepageController extends Controller
             ];
         });
 
-        // Get all categories for filter dropdown
+        // Get all categories for filter dropdown with accurate product counts
         $categories = Category::where('is_active', true)
-            ->withCount(['products' => function ($query) {
-                $query->where('is_active', true);
-            }])
             ->orderBy('name')
             ->get()
             ->map(function ($category) {
@@ -184,7 +181,7 @@ class HomepageController extends Controller
                     'id' => $category->id,
                     'name' => $category->name,
                     'slug' => $category->slug,
-                    'products_count' => $category->products_count,
+                    'products_count' => $category->getTotalProductsCount(),
                 ];
             });
 
