@@ -8,7 +8,6 @@ import {
     Mail,
     Lock,
     LogIn,
-    ShoppingBag,
     AlertCircle
 } from 'lucide-react';
 
@@ -39,11 +38,8 @@ export default function Login({ status, canResetPassword }) {
             <div className="max-w-md w-full space-y-8">
                 {/* Header */}
                 <div className="text-center">
-                    <Link href="/" className="flex items-center justify-center space-x-2 mb-6">
-                        <div className="bg-blue-600 p-2 rounded-lg">
-                            <ShoppingBag className="h-8 w-8 text-white" />
-                        </div>
-                        <span className="text-2xl font-bold text-white">ACCSZone</span>
+                    <Link href="/" className="flex items-center justify-center mb-6">
+                        <img src="/assets/images/logo.png" alt="WarAccounts Logo" className="h-12" />
                     </Link>
                     <h2 className="text-3xl font-bold text-white">
                         Sign in to your account
@@ -186,21 +182,6 @@ export default function Login({ status, canResetPassword }) {
                         </div>
                     </form>
 
-                    {/* Demo Accounts */}
-                    <div className="mt-6 pt-6 border-t border-gray-200">
-                        <p className="text-xs text-gray-500 text-center mb-3">Demo accounts for testing:</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                            <div className="bg-gray-50 p-2 rounded text-center">
-                                <div className="font-medium text-gray-700">Admin</div>
-                                <div className="text-gray-500">admin@accszone.com</div>
-                            </div>
-                            <div className="bg-gray-50 p-2 rounded text-center">
-                                <div className="font-medium text-gray-700">Customer</div>
-                                <div className="text-gray-500">john@example.com</div>
-                            </div>
-                        </div>
-                        <p className="text-xs text-gray-400 text-center mt-2">Password: password</p>
-                    </div>
                 </div>
 
                 {/* Footer */}

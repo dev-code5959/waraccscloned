@@ -185,7 +185,7 @@ export default function ReferralsIndex({
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                                             <button
                                                 onClick={() => {
-                                                    const text = `Check out ACCSZone for digital products! Use my referral link: ${user.referral_url}`;
+                                                    const text = `Check out WarAccounts for digital products! Use my referral link: ${user.referral_url}`;
                                                     copyToClipboard(text);
                                                 }}
                                                 className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
@@ -194,7 +194,7 @@ export default function ReferralsIndex({
                                                 Copy Message
                                             </button>
                                             <a
-                                                href={`https://twitter.com/intent/tweet?text=Check%20out%20ACCSZone%20for%20digital%20products!&url=${encodeURIComponent(user.referral_url)}`}
+                                                href={`https://twitter.com/intent/tweet?text=Check%20out%20WarAccounts%20for%20digital%20products!&url=${encodeURIComponent(user.referral_url)}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="flex items-center justify-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"

@@ -382,7 +382,7 @@ export default function FundsPayment({ transaction, payment }) {
                                     → Create Support Ticket
                                 </Link>
                                 <div className="text-xs text-gray-500 mt-2">
-                                    <div>📧 support@accszone.com</div>
+                                    <div>📧 support@waraccounts.com</div>
                                     <div>💬 Live chat available</div>
                                 </div>
                             </div>

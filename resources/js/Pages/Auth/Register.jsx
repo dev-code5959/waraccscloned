@@ -9,7 +9,6 @@ import {
     Lock,
     User,
     UserPlus,
-    ShoppingBag,
     Gift,
     Check
 } from 'lucide-react';
@@ -52,11 +51,8 @@ export default function Register() {
             <div className="max-w-md w-full space-y-8">
                 {/* Header */}
                 <div className="text-center">
-                    <Link href="/" className="flex items-center justify-center space-x-2 mb-6">
-                        <div className="bg-blue-600 p-2 rounded-lg">
-                            <ShoppingBag className="h-8 w-8 text-white" />
-                        </div>
-                        <span className="text-2xl font-bold text-white">ACCSZone</span>
+                    <Link href="/" className="flex items-center justify-center mb-6">
+                        <img src="/assets/images/logo.png" alt="WarAccounts Logo" className="h-12" />
                     </Link>
                     <h2 className="text-3xl font-bold text-white">
                         Create your account
@@ -292,7 +288,7 @@ export default function Register() {
 
                     {/* Benefits */}
                     <div className="mt-6 pt-6 border-t border-gray-200">
-                        <p className="text-sm font-medium text-gray-700 mb-3">Why join ACCSZone?</p>
+                        <p className="text-sm font-medium text-gray-700 mb-3">Why join WarAccounts?</p>
                         <div className="space-y-2">
                             <div className="flex items-center text-sm text-gray-600">
                                 <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />

@@ -25,8 +25,8 @@ return [
     'allowed_document_types' => explode(',', env('ALLOWED_DOCUMENT_TYPES', 'pdf,txt,doc,docx')),
 
     // Admin settings
-    'admin_email' => env('ADMIN_EMAIL', 'admin@accszone.com'),
-    'support_email' => env('SUPPORT_EMAIL', 'support@accszone.com'),
+    'admin_email' => env('ADMIN_EMAIL', 'admin@waraccounts.com'),
+    'support_email' => env('SUPPORT_EMAIL', 'support@waraccounts.com'),
     'default_timezone' => env('DEFAULT_TIMEZONE', 'UTC'),
 
     /*

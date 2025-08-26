@@ -20,7 +20,7 @@ export default {
                 sans: ['Figtree', ...defaultTheme.fontFamily.sans],
             },
             colors: {
-                // ACCSZone Brand Colors
+                // WarAccounts Brand Colors
                 primary: {
                     50: '#eff6ff',
                     100: '#dbeafe',

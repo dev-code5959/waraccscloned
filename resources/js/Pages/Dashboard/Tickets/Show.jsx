@@ -308,9 +308,9 @@ export default function TicketsShow({
                             <div className="space-y-2 text-sm text-blue-800">
                                 <p>If you need immediate assistance, you can also:</p>
                                 <div className="space-y-1">
-                                    <div>📧 Email: support@accszone.com</div>
+                                    <div>📧 Email: support@waraccounts.com</div>
                                     <div>💬 Live Chat (business hours)</div>
-                                    <div>📱 Telegram: @ACCSZoneSupport</div>
+                                    <div>📱 Telegram: @WarAccountsSupport</div>
                                 </div>
                             </div>
                         </div>

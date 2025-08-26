@@ -117,7 +117,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">ACCSZone</div>
+            <div class="logo">WarAccounts</div>
             <div class="subtitle">Premium Digital Products</div>
         </div>
 
@@ -175,12 +175,12 @@
 
         <p>If you have any questions or need assistance with your digital products, please don't hesitate to contact our support team through your dashboard.</p>
 
-        <p>Thank you for choosing ACCSZone!</p>
+        <p>Thank you for choosing WarAccounts!</p>
 
         <div class="footer">
             <p>This email was sent regarding your order #{{ $orderNumber }}</p>
             <p>If you did not place this order, please contact support immediately.</p>
-            <p>&copy; {{ date('Y') }} ACCSZone. All rights reserved.</p>
+            <p>&copy; {{ date('Y') }} WarAccounts. All rights reserved.</p>
         </div>
     </div>
 </body>

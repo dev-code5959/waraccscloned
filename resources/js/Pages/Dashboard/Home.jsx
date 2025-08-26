@@ -313,7 +313,7 @@ export default function DashboardHome({
                             <div>
                                 <h2 className="text-xl font-bold mb-2">Referral Program</h2>
                                 <p className="text-green-100 mb-4">
-                                    Earn commission by referring friends to ACCSZone
+                                    Earn commission by referring friends to WarAccounts
                                 </p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>

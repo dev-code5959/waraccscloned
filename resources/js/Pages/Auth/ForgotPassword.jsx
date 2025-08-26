@@ -32,7 +32,7 @@ export default function ForgotPassword({ status }) {
                         <div className="bg-blue-600 p-2 rounded-lg">
                             <ShoppingBag className="h-8 w-8 text-white" />
                         </div>
-                        <span className="text-2xl font-bold text-white">ACCSZone</span>
+                        <span className="text-2xl font-bold text-white">WarAccounts</span>
                     </Link>
                     <h2 className="text-3xl font-bold text-white">
                         Forgot your password?

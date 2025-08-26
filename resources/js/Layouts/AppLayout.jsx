@@ -346,7 +346,7 @@ export default function AppLayout({ children, title }) {
                     </div>
 
                     <div className="border-t border-slate-700 mt-8 pt-8 text-center text-gray-400">
-                        <p>&copy; {new Date().getFullYear()} ACCSZone. All rights reserved.</p>
+                        <p>&copy; {new Date().getFullYear()} WarAccounts.com</p>
                     </div>
                 </div>
             </footer>

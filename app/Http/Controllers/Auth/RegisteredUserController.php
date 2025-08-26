@@ -79,6 +79,6 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect('/dashboard')->with('success', 'Welcome to ACCSZone! Your account has been created successfully.');
+        return redirect('/dashboard')->with('success', 'Welcome to WarAccounts! Your account has been created successfully.');
     }
 }

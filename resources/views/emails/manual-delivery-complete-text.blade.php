@@ -1,5 +1,5 @@
 {{-- File: resources/views/emails/manual-delivery-complete-text.blade.php --}}
-ACCSZone - Your Order is Ready!
+WarAccounts - Your Order is Ready!
 
 Hello {{ $customerName }},
 
@@ -32,10 +32,10 @@ If you have any questions or need assistance with your digital products, please 
 
 View your order details: {{ config('app.url') }}/dashboard/orders/{{ $order->id }}
 
-Thank you for choosing ACCSZone!
+Thank you for choosing WarAccounts!
 
 ---
 This email was sent regarding your order #{{ $orderNumber }}
 If you did not place this order, please contact support immediately.
 
-© {{ date('Y') }} ACCSZone. All rights reserved.
+© {{ date('Y') }} WarAccounts. All rights reserved.

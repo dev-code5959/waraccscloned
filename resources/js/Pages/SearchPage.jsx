@@ -8,7 +8,6 @@ import {
     Filter,
     Grid,
     List,
-    ShoppingBag,
     Mail,
     CheckCircle,
     Clock,
@@ -372,7 +371,9 @@ export default function SearchPage({
                                                     </div>
 
                                                     <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                                                        {product.name}
+                                                        <Link href={`/products/${product.slug}`} className="hover:underline">
+                                                            {product.name}
+                                                        </Link>
                                                     </h3>
 
                                                     <p className="text-sm text-gray-600 mb-4 line-clamp-3">
@@ -395,9 +396,8 @@ export default function SearchPage({
                                                         </div>
                                                         <Link
                                                             href={`/products/${product.slug}`}
-                                                            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded font-medium text-sm transition-colors inline-flex items-center"
+                                                            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded font-medium text-sm transition-colors"
                                                         >
-                                                            <ShoppingBag className="h-4 w-4 mr-1" />
                                                             Buy Now
                                                         </Link>
                                                     </div>
@@ -419,7 +419,9 @@ export default function SearchPage({
                                                             <div className="flex items-start justify-between">
                                                                 <div className="flex-1 mr-4">
                                                                     <h3 className="font-semibold text-gray-900 mb-1">
-                                                                        {product.name}
+                                                                        <Link href={`/products/${product.slug}`} className="hover:underline">
+                                                                            {product.name}
+                                                                        </Link>
                                                                     </h3>
                                                                     <p className="text-sm text-gray-600 mb-2 line-clamp-2">
                                                                         {product.description}
@@ -440,18 +442,17 @@ export default function SearchPage({
                                                                             {product.formatted_price}
                                                                         </div>
                                                                     </div>
-                                                                    <Link
-                                                                        href={`/products/${product.slug}`}
-                                                                        className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded font-medium text-sm transition-colors inline-flex items-center"
-                                                                    >
-                                                                        <ShoppingBag className="h-4 w-4 mr-1" />
-                                                                        Buy Now
-                                                                    </Link>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                                      <Link
+                                                                          href={`/products/${product.slug}`}
+                                                                          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded font-medium text-sm transition-colors"
+                                                                      >
+                                                                          Buy Now
+                                                                      </Link>
+                                                                  </div>
+                                                              </div>
+                                                          </div>
+                                                      </div>
+                                                  </div>
                                             </div>
                                         ))}
                                     </div>

@@ -43,7 +43,7 @@ export default function ResetPassword({ token, email }) {
                         <div className="bg-blue-600 p-2 rounded-lg">
                             <ShoppingBag className="h-8 w-8 text-white" />
                         </div>
-                        <span className="text-2xl font-bold text-white">ACCSZone</span>
+                        <span className="text-2xl font-bold text-white">WarAccounts</span>
                     </div>
                     <h2 className="text-3xl font-bold text-white">
                         Reset your password
@@ -177,7 +177,7 @@ export default function ResetPassword({ token, email }) {
                                     </h3>
                                     <div className="mt-2 text-sm text-blue-700">
                                         <ul className="list-disc pl-5 space-y-1">
-                                            <li>Use a unique password for your ACCSZone account</li>
+                                            <li>Use a unique password for your WarAccounts account</li>
                                             <li>Include uppercase, lowercase, numbers, and symbols</li>
                                             <li>Avoid personal information like birthdays or names</li>
                                             <li>Consider enabling two-factor authentication after login</li>

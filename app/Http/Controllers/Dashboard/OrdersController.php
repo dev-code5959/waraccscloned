@@ -712,7 +712,7 @@ class OrdersController extends Controller
 
                     <div class="invoice-header">
                         <div class="company-info">
-                            <h1>ACCSZone</h1>
+                            <h1>WarAccounts</h1>
                             <p>Premium Digital Products</p>
                             <p>Instant Delivery • Secure Payments</p>
                         </div>
