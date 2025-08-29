@@ -256,8 +256,8 @@ class OrderManagementController extends Controller
                 'description' => "Manual delivery of {$order->quantity} x {$order->product->name}",
             ]);
 
-            // Send email with attachments
-            Mail::to($order->user->email)->send(new ManualDeliveryComplete($order, $uploadedFiles));
+            // Send email with attachments asynchronously
+            Mail::to($order->user->email)->queue(new ManualDeliveryComplete($order, $uploadedFiles));
 
             // Notify user of delivery
             app(NotificationService::class)->send($order->user, new OrderDeliveredNotification($order));

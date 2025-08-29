@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\PromoCodeController;
 use App\Http\Controllers\Admin\CmsController;
 use App\Http\Controllers\Admin\ReportsController;
 use App\Http\Controllers\CmsPageController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -187,9 +188,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
 // API Routes for AJAX calls
 Route::middleware('auth')->prefix('api')->group(function () {
     Route::post('/products/{product}/check-stock', [ProductController::class, 'checkStock'])->name('api.products.check-stock');
-    Route::get('/notifications', function () {
-        return response()->json(['notifications' => []]);
-    })->name('api.notifications');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('api.notifications');
 });
 
 // Webhook Routes (no auth required)
