@@ -4,18 +4,21 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Order;
-use App\Models\User;
-use App\Models\Product;
-use App\Models\AccessCode;
-use App\Models\Transaction;
 use App\Mail\ManualDeliveryComplete;
+use App\Models\AccessCode;
+use App\Models\Order;
+use App\Models\Product;
+use App\Models\Transaction;
+use App\Models\User;
+use App\Notifications\OrderCancelledNotification;
+use App\Notifications\OrderDeliveredNotification;
+use App\Services\NotificationService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
-use Carbon\Carbon;
 
 class OrderManagementController extends Controller
 {
@@ -178,6 +181,7 @@ class OrderManagementController extends Controller
                 ]);
 
                 DB::commit();
+                app(NotificationService::class)->send($order->user, new OrderDeliveredNotification($order));
                 return back()->with('success', 'Order processed successfully and access codes delivered.');
             }
 
@@ -255,6 +259,9 @@ class OrderManagementController extends Controller
             // Send email with attachments
             Mail::to($order->user->email)->send(new ManualDeliveryComplete($order, $uploadedFiles));
 
+            // Notify user of delivery
+            app(NotificationService::class)->send($order->user, new OrderDeliveredNotification($order));
+
             // Clean up files after email is sent (optional - depends on your retention policy)
             // You might want to keep files for a certain period for support purposes
 
@@ -309,6 +316,7 @@ class OrderManagementController extends Controller
             }
 
             DB::commit();
+            app(NotificationService::class)->send($order->user, new OrderCancelledNotification($order));
             return back()->with('success', 'Order cancelled successfully.');
         } catch (\Exception $e) {
             DB::rollback();

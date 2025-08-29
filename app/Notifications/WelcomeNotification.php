@@ -19,7 +19,7 @@ class WelcomeNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -36,6 +36,13 @@ class WelcomeNotification extends Notification implements ShouldQueue
             ->line('• Refer friends and earn commissions')
             ->action('Start Shopping', url('/'))
             ->line('If you have any questions, don\'t hesitate to contact our support team.');
+    }
+
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'message' => 'Welcome to WarAccounts!',
+        ];
     }
 }
 
@@ -60,7 +67,7 @@ class LoginNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -77,6 +84,16 @@ class LoginNotification extends Notification implements ShouldQueue
             ->line('If you didn\'t sign in, please secure your account immediately.')
             ->action('Secure My Account', route('dashboard.profile.edit'))
             ->line('For your security, consider enabling two-factor authentication.');
+    }
+
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'ip_address' => $this->ipAddress,
+            'user_agent' => $this->userAgent,
+            'login_time' => $this->loginTime->format('c'),
+            'message' => 'New login detected.',
+        ];
     }
 }
 
@@ -99,7 +116,7 @@ class PasswordResetNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -117,6 +134,13 @@ class PasswordResetNotification extends Notification implements ShouldQueue
             ->line('This password reset link will expire in ' . config('auth.passwords.' . config('auth.defaults.passwords') . '.expire') . ' minutes.')
             ->line('If you did not request a password reset, no further action is required.')
             ->line('For security reasons, please do not share this link with anyone.');
+    }
+
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'message' => 'Password reset requested.',
+        ];
     }
 }
 
@@ -147,6 +171,18 @@ class EmailVerificationNotification extends VerifyEmail implements ShouldQueue
             ->line('If you did not create an account, no further action is required.')
             ->salutation('Best regards, The WarAccounts Team');
     }
+
+    public function via($notifiable): array
+    {
+        return ['mail', 'database'];
+    }
+
+    public function toArray($notifiable): array
+    {
+        return [
+            'message' => 'Verify your email address.',
+        ];
+    }
 }
 
 // File: app/Notifications/AccountSuspendedNotification.php
@@ -168,7 +204,7 @@ class AccountSuspendedNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -181,5 +217,13 @@ class AccountSuspendedNotification extends Notification implements ShouldQueue
             ->line('If you believe this is a mistake or would like to appeal this decision, please contact our support team.')
             ->action('Contact Support', url('/contact'))
             ->line('Thank you for your understanding.');
+    }
+
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'reason' => $this->reason,
+            'message' => 'Account suspended.',
+        ];
     }
 }

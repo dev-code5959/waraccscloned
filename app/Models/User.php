@@ -11,6 +11,8 @@ use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use App\Notifications\EmailVerificationNotification;
+use App\Notifications\PasswordResetNotification;
 
 class User extends Authenticatable
 {
@@ -121,6 +123,16 @@ class User extends Authenticatable
     public function getTwoFactorEnabledAttribute()
     {
         return !is_null($this->two_factor_secret);
+    }
+
+    public function sendEmailVerificationNotification()
+    {
+        $this->notify(new EmailVerificationNotification());
+    }
+
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new PasswordResetNotification($token));
     }
 
     // Helper Methods

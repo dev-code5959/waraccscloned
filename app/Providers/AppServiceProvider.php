@@ -4,6 +4,11 @@
 namespace App\Providers;
 
 use App\Models\Category;
+use App\Listeners\SendLoginNotification;
+use App\Listeners\SendWelcomeNotification;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Registered;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Vite;
@@ -41,6 +46,10 @@ class AppServiceProvider extends ServiceProvider
         if (app()->environment('production')) {
             URL::forceScheme('https');
         }
+
+        // Register notification listeners
+        Event::listen(Registered::class, SendWelcomeNotification::class);
+        Event::listen(Login::class, SendLoginNotification::class);
     }
 
     /**
