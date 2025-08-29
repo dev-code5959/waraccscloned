@@ -7,6 +7,11 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\PromoCode;
 use App\Models\Transaction;
+use App\Notifications\OrderCancelledNotification;
+use App\Notifications\OrderCreatedNotification;
+use App\Notifications\OrderDeliveredNotification;
+use App\Notifications\OrderPaidNotification;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -113,6 +118,9 @@ class OrderController extends Controller
 
             DB::commit();
 
+            // Notify user about order creation
+            app(NotificationService::class)->send($user, new OrderCreatedNotification($order));
+
             // Redirect to payment page with success message
             return redirect()->route('orders.payment', $order)
                 ->with('success', 'Order created successfully');
@@ -210,6 +218,12 @@ class OrderController extends Controller
 
             DB::commit();
 
+            // Notify user of payment and delivery status
+            app(NotificationService::class)->send($user, new OrderPaidNotification($order));
+            if ($order->status === 'completed') {
+                app(NotificationService::class)->send($user, new OrderDeliveredNotification($order));
+            }
+
             return redirect()->route('dashboard.orders.show', $order)
                 ->with('success', $successMessage);
         } catch (\Exception $e) {
@@ -281,6 +295,7 @@ class OrderController extends Controller
         }
 
         $order->markAsCancelled('Cancelled by user');
+        app(NotificationService::class)->send($order->user, new OrderCancelledNotification($order));
 
         return redirect()->route('dashboard.orders.index')
             ->with('success', 'Order cancelled successfully');
