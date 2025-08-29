@@ -189,6 +189,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
 Route::middleware('auth')->prefix('api')->group(function () {
     Route::post('/products/{product}/check-stock', [ProductController::class, 'checkStock'])->name('api.products.check-stock');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('api.notifications');
+    Route::post('/notifications/{notification}/mark-read', [NotificationController::class, 'markAsRead'])->name('api.notifications.mark-read');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('api.notifications.mark-all-read');
+    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])->name('api.notifications.destroy');
 });
 
 // Webhook Routes (no auth required)
