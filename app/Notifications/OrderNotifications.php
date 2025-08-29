@@ -43,6 +43,7 @@ class OrderCreatedNotification extends Notification implements ShouldQueue
             'message' => 'Order created successfully.',
         ];
     }
+
 }
 
 class OrderPaidNotification extends Notification implements ShouldQueue
