@@ -17,7 +17,7 @@ class OrderCreatedNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -33,6 +33,17 @@ class OrderCreatedNotification extends Notification implements ShouldQueue
             ->action('View Order', route('dashboard.orders.show', $this->order))
             ->line('Thank you for shopping with us!');
     }
+
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'order_id' => $this->order->id,
+            'order_number' => $this->order->order_number,
+            'status' => 'created',
+            'message' => 'Order created successfully.',
+        ];
+    }
+
 }
 
 class OrderPaidNotification extends Notification implements ShouldQueue
@@ -45,7 +56,7 @@ class OrderPaidNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -64,6 +75,16 @@ class OrderPaidNotification extends Notification implements ShouldQueue
             ->action('View Order', route('dashboard.orders.show', $this->order))
         ->line('Thank you for shopping with us!');
     }
+
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'order_id' => $this->order->id,
+            'order_number' => $this->order->order_number,
+            'status' => 'paid',
+            'message' => 'Payment received.',
+        ];
+    }
 }
 
 class OrderDeliveredNotification extends Notification implements ShouldQueue
@@ -76,7 +97,7 @@ class OrderDeliveredNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -87,6 +108,16 @@ class OrderDeliveredNotification extends Notification implements ShouldQueue
             ->line('Your order ' . $this->order->order_number . ' has been delivered.')
             ->action('View Order', route('dashboard.orders.show', $this->order))
             ->line('Thank you for shopping with us!');
+    }
+
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'order_id' => $this->order->id,
+            'order_number' => $this->order->order_number,
+            'status' => 'delivered',
+            'message' => 'Order delivered.',
+        ];
     }
 }
 
@@ -100,7 +131,7 @@ class OrderCancelledNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -111,5 +142,15 @@ class OrderCancelledNotification extends Notification implements ShouldQueue
             ->line('Your order ' . $this->order->order_number . ' has been cancelled.')
             ->action('View Orders', route('dashboard.orders.index'))
             ->line('If you have any questions, please contact support.');
+    }
+
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'order_id' => $this->order->id,
+            'order_number' => $this->order->order_number,
+            'status' => 'cancelled',
+            'message' => 'Order cancelled.',
+        ];
     }
 }
