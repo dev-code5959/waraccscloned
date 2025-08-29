@@ -1,6 +1,6 @@
 // File: resources/js/Layouts/AdminLayout.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import {
     LayoutDashboard,
@@ -24,6 +24,14 @@ import {
 export default function AdminLayout({ children }) {
     const { auth, flash } = usePage().props;
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [notificationCount, setNotificationCount] = useState(0);
+
+    useEffect(() => {
+        fetch(route('api.notifications'))
+            .then(res => res.json())
+            .then(data => setNotificationCount(data.unread_count ?? 0))
+            .catch(() => setNotificationCount(0));
+    }, []);
 
     const navigation = [
         { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -153,10 +161,11 @@ export default function AdminLayout({ children }) {
                             {/* Notifications */}
                             <button className="text-gray-500 hover:text-gray-700 relative">
                                 <Bell className="h-6 w-6" />
-                                {/* Notification badge */}
-                                <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                                    5
-                                </span>
+                                {notificationCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                                        {notificationCount}
+                                    </span>
+                                )}
                             </button>
 
                             {/* Admin badge */}
