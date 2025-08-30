@@ -374,18 +374,6 @@ export default function AdminLayout({ children }) {
                                                 </div>
                                             )}
                                         </div>
-
-                                        {notifications.length > 0 && (
-                                            <div className="p-3 border-t border-gray-200 bg-gray-50">
-                                                <Link
-                                                    href="/admin/notifications"
-                                                    className="block text-center text-sm text-red-600 hover:text-red-800 font-medium"
-                                                    onClick={() => setShowNotifications(false)}
-                                                >
-                                                    View all notifications
-                                                </Link>
-                                            </div>
-                                        )}
                                     </div>
                                 )}
                             </div>

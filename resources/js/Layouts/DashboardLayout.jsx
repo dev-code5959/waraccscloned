@@ -354,17 +354,6 @@ export default function DashboardLayout({ children }) {
                                             )}
                                         </div>
 
-                                        {notifications.length > 0 && (
-                                            <div className="p-3 border-t border-gray-200 bg-gray-50">
-                                                <Link
-                                                    href="/dashboard/notifications"
-                                                    className="block text-center text-sm text-blue-600 hover:text-blue-800 font-medium"
-                                                    onClick={() => setShowNotifications(false)}
-                                                >
-                                                    View all notifications
-                                                </Link>
-                                            </div>
-                                        )}
                                     </div>
                                 )}
                             </div>
