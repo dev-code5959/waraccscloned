@@ -69,7 +69,7 @@ class ReportsController extends Controller
         ];
 
         return Inertia::render('Admin/Reports/Sales', [
-            'salesData' => $salesData->paginate(50),
+            'salesData' => $salesData,
             'salesStats' => $salesStats,
             'filters' => $request->only(['date_from', 'date_to']),
         ]);
@@ -104,7 +104,7 @@ class ReportsController extends Controller
         ];
 
         return Inertia::render('Admin/Reports/Users', [
-            'usersData' => $usersData->paginate(50),
+            'usersData' => $usersData,
             'userStats' => $userStats,
             'filters' => $request->only(['date_from', 'date_to']),
         ]);
@@ -229,7 +229,7 @@ class ReportsController extends Controller
         ];
 
         return Inertia::render('Admin/Reports/Support', [
-            'supportData' => $supportData->paginate(50),
+            'supportData' => $supportData,
             'supportStats' => $supportStats,
             'filters' => $request->only(['date_from', 'date_to', 'status', 'priority']),
         ]);

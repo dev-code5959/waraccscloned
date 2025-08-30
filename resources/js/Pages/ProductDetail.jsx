@@ -373,9 +373,6 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                             </div>
                         )}
 
-                        {/* Delivery Info */}
-                        {getDeliveryInfoMessage()}
-
                         {/* Security Badge */}
                         <div className="flex items-center space-x-4 text-sm text-gray-600">
                             <div className="flex items-center space-x-2">
@@ -425,9 +422,6 @@ export default function ProductDetail({ product, relatedProducts, meta, auth, er
                                                     {relatedProduct.name}
                                                 </h3>
                                             </Link>
-                                            {relatedProduct.manual_delivery && (
-                                                <Truck className="h-4 w-4 text-blue-600 flex-shrink-0 ml-2" />
-                                            )}
                                         </div>
 
                                         <div className="flex items-center justify-between mb-3">

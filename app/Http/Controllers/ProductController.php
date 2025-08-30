@@ -24,6 +24,27 @@ class ProductController extends Controller
                     'slug' => $category->slug,
                     'description' => $category->description,
                     'icon' => $category->icon,
+                    'products' => Product::whereIn('id', $category->getAllProductIds())->limit(5)->active()->get()->map(function ($product) {
+                        return [
+                            'id' => $product->id,
+                            'name' => $product->name,
+                            'slug' => $product->slug,
+                            'description' => $product->description,
+                            'price' => $product->price,
+                            'formatted_price' => '$' . number_format($product->price, 2),
+                            'manual_delivery' => $product->manual_delivery,
+                            'stock_quantity' => $product->stock_quantity,
+                            'is_in_stock' => $product->is_in_stock,
+                            'available_stock' => $product->available_access_codes_count ?? $product->stock_quantity,
+                            'features' => $product->features,
+                            'main_image' => $product->main_image,
+                            'category' => $product->category ? [
+                                'id' => $product->category->id,
+                                'name' => $product->category->name,
+                                'slug' => $product->category->slug,
+                            ] : null,
+                        ];
+                    }),
                     'products_count' => $category->getTotalProductsCount(),
                     'children' => $category->children->map(function ($child) {
                         return [
