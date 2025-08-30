@@ -53,7 +53,6 @@ class ReportsController extends Controller
 
         $salesData = Order::with(['user:id,name,email', 'product:id,name'])
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('status', 'completed')
             ->orderBy('created_at', 'desc')
             ->get();
 
