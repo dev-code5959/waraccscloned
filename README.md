@@ -327,3 +327,5 @@ This project is open-sourced software licensed under the [MIT license](https://o
 ---
 
 **Note**: This is a demo/educational project. Ensure proper security measures and compliance checks before using in production for real digital product sales.
+#   w a r a c c s c l o n e d  
+ 
